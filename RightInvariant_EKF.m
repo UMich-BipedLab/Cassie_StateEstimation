@@ -1,5 +1,5 @@
 % State Estimator
-classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
+classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     % Public, tunale properties
     properties
@@ -49,6 +49,7 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
         X_prev;
         theta_prev;
         P_prev;
+        contact_prev;
         
         % Sensor Covariances
         Qg;    % Gyro Covariance Matrix
@@ -97,6 +98,7 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
             obj.X_prev = eye(7); 
             obj.theta_prev = zeros(6,1);
             obj.P_prev = eye(21);
+            obj.contact_prev = zeros(2,1);
                         
         end % setupImpl
         
@@ -168,8 +170,9 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                     r0 = - Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
 %                     r0 = zeros(3,1);
                     pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; zeros(3,1); obj.ba0; obj.bg0];
-                    obj.Sigma_prev = blkdiag(0.01*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-1*eye(3)).^2, (5e-2*eye(3)).^2);
+                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
+                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
+                    obj.Sigma_prev = blkdiag(0.01*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-2*eye(3)).^2, (5e-3*eye(3)).^2);
                     obj.filter_enabled = true;
                     
                 elseif contact(2) == 1
@@ -177,17 +180,12 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
                     r0 = - Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
 %                     r0 = zeros(3,1);
+                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
                     pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
-                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); zeros(3,1); pL; obj.ba0; obj.bg0];
-                    obj.Sigma_prev = blkdiag(0.1*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-1*eye(3)).^2, (5e-2*eye(3)).^2);
+                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
+                    obj.Sigma_prev = blkdiag(0.1*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-2*eye(3)).^2, (5e-3*eye(3)).^2);
                     obj.filter_enabled = true;
                 end
-                
-                % Randomize Initial Condition
-%                 obj.mu_prev(7:10) = Angles.Rotation_to_Quaternion( Angles.Euler_to_Rotation([0,0,pi] + deg2rad([0,0,0]))' );
-%                 obj.mu_prev(4:6) = [0.5; -0.3; 0.7];
-                obj.Sigma_prev(7:9,7:9) = (deg2rad(5)^2) * eye(3);
-                obj.Sigma_prev(4:6,4:6) = (0.2^2) * eye(3);
                 
                 % Convert to new state representation
                 [obj.X_prev, obj.theta_prev] = obj.Construct_State(Angles.Quaternion_to_Rotation(obj.mu_prev(7:10))', obj.mu_prev(4:6), obj.mu_prev(1:3), obj.mu_prev(11:13), obj.mu_prev(14:16), obj.mu_prev(20:22), obj.mu_prev(17:19));
@@ -232,19 +230,19 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
 
             % Linearized invariant error dynamics
             Fc = [          zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),                 -R, zeros(3);
-                  Angles.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3),  -Angles.skew(v)*R,        -R;
+                  Angles.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3),  -Angles.skew(v)*R,       -R;
                             zeros(3),   eye(3), zeros(3), zeros(3), zeros(3),  -Angles.skew(p)*R, zeros(3);
                             zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Angles.skew(dR)*R, zeros(3);
                             zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Angles.skew(dL)*R, zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3), zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3), zeros(3)];
+                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3),  zeros(3);
+                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3),  zeros(3)];
 
             Fk = eye(21) + Fc*obj.dt; % Discretized 
                         
             Lc = blkdiag(obj.Adjoint(obj.X_prev), eye(6));
             hR_R = R_VectorNav_to_RightToeBottom(e);
             hR_L = R_VectorNav_to_LeftToeBottom(e);
-            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba); 
+            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
             Qk = Fk*Lc*Q*Lc'*Fk'*obj.dt; % Discretized
 
             
@@ -256,12 +254,15 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                 P_pred = Fk*obj.P_prev*Fk' + Qk;
             end
                         
+            
             %% Update state using encoder measurements
             
             if contact(2) == 1 && contact(1) == 1 && obj.ekf_update_enabled 
                 % Double Support
                 s_pR = p_VectorNav_to_RightToeBottom(e);
                 s_pL = p_VectorNav_to_LeftToeBottom(e);
+                JR = J_VectorNav_to_RightToeBottom(e);
+                JL = J_VectorNav_to_LeftToeBottom(e);
                 
                 % Measurement Model
                 YR = [s_pR; 0; 1; -1; 0];
@@ -270,8 +271,6 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                      zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                  
                 % Compute Kalman Gain
-                JR = J_VectorNav_to_RightToeBottom(e);
-                JL = J_VectorNav_to_LeftToeBottom(e);
                 N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred', ...
                             R_pred * JL * obj.Qe * JL' * R_pred');
                 PI = [eye(3), zeros(3,4), zeros(3,7);
@@ -294,17 +293,17 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                     P = (eye(21) - K*H)*P_pred*(eye(21) - K*H)' + K*N*K'; % Joseph update form
                 end
                 K = K(1:15,1:3);
-                
+                                
             elseif contact(2) == 1 && obj.ekf_update_enabled
                 % Single Support Right    
                 s_pR = p_VectorNav_to_RightToeBottom(e);
-
+                JR = J_VectorNav_to_RightToeBottom(e);
+                
                 % Measurement Model
                 YR = [s_pR; 0; 1; -1; 0];
                 H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
                  
                 % Compute Kalman Gain
-                JR = J_VectorNav_to_RightToeBottom(e);
                 N = R_pred * JR * obj.Qe * JR' * R_pred';
                 PI = [eye(3), zeros(3,4)];
                 S = H*P_pred*H' + N;
@@ -326,16 +325,17 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
                 end
                 K = K(1:15,:);
                 
+                
             elseif contact(1) == 1 && obj.ekf_update_enabled
                 % Single Support Left
                 s_pL = p_VectorNav_to_LeftToeBottom(e);
+                JL = J_VectorNav_to_LeftToeBottom(e);
 
                 % Measurement Model
                 YL = [s_pL; 0; 1; 0; -1];
                 H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                 
                 % Compute Kalman Gain
-                JL = J_VectorNav_to_LeftToeBottom(e);
                 N = R_pred * JL * obj.Qe * JL' * R_pred';
                 PI = [eye(3), zeros(3,4)];
                 S = H*P_pred*H' + N;
@@ -380,6 +380,7 @@ classdef StateEstimator_RIEKF < matlab.System & matlab.system.mixin.Propagates %
             obj.X_prev = X;
             obj.theta_prev = theta;
             obj.P_prev = P;
+            obj.contact_prev = contact;
             
             % Store values for output logging
             [R, v, p, dR, dL, bw, ba] = obj.Separate_State(X, theta);

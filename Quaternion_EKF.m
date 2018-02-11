@@ -1,5 +1,5 @@
 % State Estimator
-classdef StateEstimator_EKF < matlab.System & matlab.system.mixin.Propagates %#codegen
+classdef Quaternion_EKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     % Public, tunale properties
     properties
@@ -112,10 +112,6 @@ classdef StateEstimator_EKF < matlab.System & matlab.system.mixin.Propagates %#c
             %   Date:   11/6/2017
             %
             
-%             if t > 140 && t < 150
-%                 contact = [0;0];
-%             end
-            
             % Wait until valid encoder signal
             if norm(e) == 0
                 EnableFilter = 0; % Keep filter disabled
@@ -156,8 +152,8 @@ classdef StateEstimator_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                 if contact(1) == 1
                     % Initialize with left foot at 0
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
-%                     r0 = - Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
-                    r0 = zeros(3,1);
+                    r0 = - Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
+%                     r0 = zeros(3,1);
                     pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
                     pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
@@ -167,8 +163,8 @@ classdef StateEstimator_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                 elseif contact(2) == 1
                     % Initialize with right foot at 0
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
-%                     r0 = - Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    r0 = zeros(3,1);
+                    r0 = - Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
+%                     r0 = zeros(3,1);
                     pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
                     pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
@@ -176,24 +172,18 @@ classdef StateEstimator_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                     obj.filter_enabled = true;
                 end
                 
-                % Randomize Initial Condition
-%                 obj.mu_prev(7:10) = Angles.Rotation_to_Quaternion( Angles.Euler_to_Rotation([0,0,pi] + deg2rad([0,0,0]))' );
-%                 obj.mu_prev(4:6) = [0.5; -0.3; 0.7];
-                obj.Sigma_prev(7:9,7:9) = (deg2rad(30)^2) * eye(3);
-                obj.Sigma_prev(4:6,4:6) = (1^2) * eye(3);
-                
             end
 
-%             % Reset Filter if flight phase happens for longer than 100ms
-%             if contact(1) ~= 1 && contact(2) ~= 1
-%                 obj.flight_phase = true;
-%             else
-%                 obj.t_liftoff = t;
-%                 obj.flight_phase = false;
-%             end
-%             if (t - obj.t_liftoff) > 0.1
-%                 obj.filter_enabled = false;
-%             end
+            % Reset Filter if flight phase happens for longer than 100ms
+            if contact(1) ~= 1 && contact(2) ~= 1
+                obj.flight_phase = true;
+            else
+                obj.t_liftoff = t;
+                obj.flight_phase = false;
+            end
+            if (t - obj.t_liftoff) > 0.1
+                obj.filter_enabled = false;
+            end
             
             %% Predict state using IMU measurements
             [r, v, q, pR, pL, bf, bw] = obj.Separate_States(obj.mu_prev);
