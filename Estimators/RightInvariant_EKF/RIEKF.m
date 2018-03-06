@@ -1,12 +1,14 @@
 % State Estimator
-classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#codegen
+classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     % Public, tunale properties
     properties
+        % Enable Static Bias Initialization
         static_bias_initialization = true;
+        % Enable Measurement Updates
         ekf_update_enabled = true;
+        % Sample Time
         dt = 1/1000;
-        
         % Enable Bias Estimation
         enable_bias_estimation = true;
         % Gyroscope Noise std
@@ -20,12 +22,23 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
         % Contact Noise std
         contact_noise_std = 0.1*ones(3,1);
         % Encoder Noise std
-        encoder_noise_std = 0.1*ones(14,1);    
-        % Gyroscope Bias Initial Condition
+        encoder_noise_std = 0.1*ones(14,1);
+        % Gyroscope Bias Initial Condition 
         gyro_bias_init = zeros(3,1);
         % Accelerometer Bias Initial Condition
         accel_bias_init = zeros(3,1);
-        
+        % Prior Base Pose std
+        prior_base_pose_std = 0.1*ones(6,1);
+        % Prior Base Velocity std
+        prior_base_velocity_std = 0.1*ones(3,1);
+        % Prior Contact position std
+        prior_contact_position_std = 0.1*ones(3,1);
+        % Prior Gyroscope Bias std
+        prior_gyro_bias_std = 0.1*ones(3,1);
+        % Prior Accelerometer Bias std
+        prior_accel_bias_std = 0.1*ones(3,1);
+        % Prior Forward Kinematics std
+        prior_forward_kinematics_std = 0.1*ones(3,1);
     end
     
     % PROTECTED PROPERTIES ==================================================
@@ -58,6 +71,8 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
         Qba;   % Accel Bias Covariance Matrix
         Qc;    % Contact Covariance Matrix
         Qe;    % Encoder Covariance Matrix
+        Np;    % Prior Forward Kinematics Covariance Matrix
+        Sigma_prior;
         
     end
     
@@ -89,7 +104,15 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
             obj.Qba = diag(obj.accel_bias_noise_std.^2);   % Accel Bias Covariance Matrix
             obj.Qc = diag(obj.contact_noise_std.^2);       % Contact Covariance Matrix
             obj.Qe = diag(obj.encoder_noise_std.^2);       % Encoder Covariance Matrix
-            
+            obj.Np = diag(obj.prior_forward_kinematics_std.^2); % Prior Forward Kinematics Covariance Matrix
+            obj.Sigma_prior = blkdiag(diag(obj.prior_base_pose_std(1:3).^2), ...
+                                      diag(obj.prior_base_velocity_std.^2), ...
+                                      diag(obj.prior_base_pose_std(4:6).^2), ...
+                                      diag(obj.prior_contact_position_std.^2), ...
+                                      diag(obj.prior_contact_position_std.^2), ...
+                                      diag(obj.prior_accel_bias_std.^2),...
+                                      diag(obj.prior_gyro_bias_std.^2));
+                                         
             % Initialize bias estimates
             obj.bg0 = obj.gyro_bias_init;
             obj.ba0 = obj.accel_bias_init;
@@ -172,9 +195,9 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                     pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
                     pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
-                    obj.Sigma_prev = blkdiag(0.01*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-2*eye(3)).^2, (5e-3*eye(3)).^2);
+                    obj.Sigma_prev = obj.Sigma_prior;
                     obj.filter_enabled = true;
-                    
+
                 elseif contact(2) == 1
                     % Initialize with right foot at 0
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
@@ -183,7 +206,7 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                     pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
                     pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
-                    obj.Sigma_prev = blkdiag(0.1*eye(3),0.1*eye(3), 0.1*eye(3), 0.1*eye(3), 0.1*eye(3), (5e-2*eye(3)).^2, (5e-3*eye(3)).^2);
+                    obj.Sigma_prev = obj.Sigma_prior;
                     obj.filter_enabled = true;
                 end
                 
@@ -271,8 +294,8 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                      zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                  
                 % Compute Kalman Gain
-                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred', ...
-                            R_pred * JL * obj.Qe * JL' * R_pred');
+                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
+                            R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);
                 PI = [eye(3), zeros(3,4), zeros(3,7);
                       zeros(3,7), eye(3), zeros(3,4)];
                 S = H*P_pred*H' + N;
@@ -304,7 +327,7 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                 H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
                  
                 % Compute Kalman Gain
-                N = R_pred * JR * obj.Qe * JR' * R_pred';
+                N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
                 PI = [eye(3), zeros(3,4)];
                 S = H*P_pred*H' + N;
                 K = (P_pred*H')/S;
@@ -336,7 +359,7 @@ classdef RightInvariant_EKF < matlab.System & matlab.system.mixin.Propagates %#c
                 H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                 
                 % Compute Kalman Gain
-                N = R_pred * JL * obj.Qe * JL' * R_pred';
+                N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
                 PI = [eye(3), zeros(3,4)];
                 S = H*P_pred*H' + N;
                 K = (P_pred*H')/S;
