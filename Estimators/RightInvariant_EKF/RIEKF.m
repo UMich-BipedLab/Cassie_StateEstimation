@@ -1,14 +1,14 @@
 % State Estimator
 classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
-    % Public, tunale properties
+    %% Properties ==================================================
+    
+    % PUBLIC PROPERTIES
     properties
         % Enable Static Bias Initialization
         static_bias_initialization = true;
         % Enable Measurement Updates
         ekf_update_enabled = true;
-        % Sample Time
-        dt = 1/1000;
         % Enable Bias Estimation
         enable_bias_estimation = true;
         % Gyroscope Noise std
@@ -41,15 +41,16 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         prior_forward_kinematics_std = 0.1*ones(3,1);
     end
     
-    % PROTECTED PROPERTIES ==================================================
+    % PROTECTED PROPERTIES 
     properties (Access = protected)
         params
-    end % properties
+    end 
     
-    % Private variales
+    % PRIVATE PROPERTIES
     properties(Access = private)
-        mu_prev;
-        Sigma_prev;
+        X;
+        theta;
+        P;
         filter_enabled;
         bias_initialized;
         ba0 = zeros(3,1);
@@ -57,12 +58,11 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         a_init_vec;
         w_init_vec;
         imu_init_count = 1;
-        flight_phase = true;
-        t_liftoff = 0;
-        X_prev;
-        theta_prev;
-        P_prev;
+        w_prev;
+        a_prev;
+        encoders_prev;
         contact_prev;
+        t_prev;
         
         % Sensor Covariances
         Qg;    % Gyro Covariance Matrix
@@ -72,30 +72,27 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         Qc;    % Contact Covariance Matrix
         Qe;    % Encoder Covariance Matrix
         Np;    % Prior Forward Kinematics Covariance Matrix
-        Sigma_prior;
+        P_prior;
         
     end
     
-    % Pre-computed constants
+    % PRIVATE CONSTANTS
     properties(Access = private, Constant)
         % EKF Noise Parameters
         g = [0;0;-9.81]; % Gravity
         imu_init_total_count = 1000;
     end
     
-    % PROTECTED METHODS =====================================================
+    %% PROTECTED METHODS =====================================================
     methods (Access = protected)
         
         function setupImpl(obj)
             %SETUPIMPL Initialize System object.
             obj.params = CassieParameters;
-            obj.mu_prev = [zeros(3,1); zeros(3,1); [1;0;0;0]; zeros(12,1)];
-            obj.Sigma_prev = zeros(21);
             obj.filter_enabled = false;
             obj.bias_initialized = false;
             obj.a_init_vec = zeros(3, obj.imu_init_total_count);
             obj.w_init_vec = zeros(3, obj.imu_init_total_count);
-            obj.t_liftoff = 0;
             
             % Initialize Sensor Covariances
             obj.Qg = diag(obj.gyro_noise_std.^2);          % Gyro Covariance Matrix
@@ -105,318 +102,135 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             obj.Qc = diag(obj.contact_noise_std.^2);       % Contact Covariance Matrix
             obj.Qe = diag(obj.encoder_noise_std.^2);       % Encoder Covariance Matrix
             obj.Np = diag(obj.prior_forward_kinematics_std.^2); % Prior Forward Kinematics Covariance Matrix
-            obj.Sigma_prior = blkdiag(diag(obj.prior_base_pose_std(1:3).^2), ...
-                                      diag(obj.prior_base_velocity_std.^2), ...
-                                      diag(obj.prior_base_pose_std(4:6).^2), ...
-                                      diag(obj.prior_contact_position_std.^2), ...
-                                      diag(obj.prior_contact_position_std.^2), ...
-                                      diag(obj.prior_accel_bias_std.^2),...
-                                      diag(obj.prior_gyro_bias_std.^2));
+            obj.P_prior = blkdiag(diag(obj.prior_base_pose_std(1:3).^2), ...
+                                  diag(obj.prior_base_velocity_std.^2), ...
+                                  diag(obj.prior_base_pose_std(4:6).^2), ...
+                                  diag(obj.prior_contact_position_std.^2), ...
+                                  diag(obj.prior_contact_position_std.^2), ...
+                                  diag(obj.prior_gyro_bias_std.^2),...
+                                  diag(obj.prior_accel_bias_std.^2));
                                          
             % Initialize bias estimates
             obj.bg0 = obj.gyro_bias_init;
             obj.ba0 = obj.accel_bias_init;
             
             % Initialze State and Covariance
-            obj.X_prev = eye(7); 
-            obj.theta_prev = zeros(6,1);
-            obj.P_prev = eye(21);
+            obj.X = eye(7); 
+            obj.theta = zeros(6,1);
+            obj.P = eye(21);
+            
+            % Variables to store previous measurements
+            obj.w_prev = zeros(3,1);
+            obj.a_prev = zeros(3,1);
+            obj.encoders_prev = zeros(14,1);
             obj.contact_prev = zeros(2,1);
+            obj.t_prev = 0;
                         
         end % setupImpl
         
-        function [mu, Sigma, enabled, K] = stepImpl(obj, EnableFilter, t, w, a, e, q_init, v_init, contact)
+        function [X, theta, P, enabled] = stepImpl(obj, enable, t, w, a, encoders, contact, X_init)
             % Function that creates a state vector from sensor readings.
             %
             %   Inputs:
-            %       EnableFilter - flag to enable/disable the filter
-            %       t            - time
-            %       w            - angular velocity, {I}_w_{WI}
-            %       a            - linear acceleration, {I}_a_{WI}
-            %       e            - joint encoder positions
-            %       e_dot        - joint encoder velocities
-            %       contact      - contact indicator
+            %       enable    - flag to enable/disable the filter
+            %       t         - time
+            %       w         - angular velocity, {I}_w_{WI}
+            %       a         - linear acceleration, {I}_a_{WI}
+            %       encoders  - joint encoder positions
+            %       contact   - contact indicator
+            %       X_init    - initial state
             %
             %   Outputs:
-            %       mu      - current state estimate, [{W}_p_{WI}, {W}_v_{WI}, R_{IW}, {W}_p_{WR}, {W}_p_{WL}, {I}_ba_{WI}, {I}_bw_{WI}]
-            %       Sigma   - current covariance estimate 
+            %       X       - current state estimate
+            %       theta   - current parameter estimates
+            %       P       - current covariance estimate 
             %       enabled - flag indicating when the filter is enabled
             %
             %   Author: Ross Hartley
             %   Date:   1/19/2018
             %
             
-            % Wait until valid encoder signal
-            if norm(e) == 0
-                EnableFilter = 0; % Keep filter disabled
-            end
-            
             % Initialize bias
-            if obj.static_bias_initialization
-                if ~obj.bias_initialized
-                    if norm(a) > 0 && norm(w) > 0 % Wait for valid signal
-                        if obj.imu_init_count <= obj.imu_init_total_count
-                            % Accumulate vector of imu data
-                            Rwi = Angles.Quaternion_to_Rotation(q_init);
-                            obj.a_init_vec(:,obj.imu_init_count) = Rwi'*(Rwi*a + obj.g);
-                            obj.w_init_vec(:,obj.imu_init_count) = w;
-                            obj.imu_init_count = obj.imu_init_count + 1;
-                        else
-                            % Use imu data vector to estimate initial biases
-                            obj.ba0 = mean(obj.a_init_vec,2);
-                            obj.bg0 = mean(obj.w_init_vec,2);
-                            obj.bias_initialized = true;
-                        end
-                    end
-                    EnableFilter = 0; % Keep filter disabled until bias is initialized
+            % (does nothing if bias is already initialized)
+            obj.InitializeBias(w, a, X_init)
+            
+            % Initiaze filter
+            % (does nothing if filter is already initialized)
+            if t > 0.01 && any(contact == 1) 
+                obj.InitializeFilter(enable, X_init);
+            end
+            
+            % Only run if filter is enabled
+            if obj.filter_enabled
+           
+                % Predict state using IMU and contact measurements     
+                obj.Predict_State(obj.w_prev, obj.a_prev, obj.encoders_prev, obj.contact_prev, t - obj.t_prev);
+
+                if obj.ekf_update_enabled
+                    % Update state using forward kinematic measurements
+                    obj.Update_ForwardKinematics(encoders, contact);
                 end
-            else
-                obj.bias_initialized = true;
-            end
             
-            % If filter is disabled, zero everything
-            if ~EnableFilter
-                obj.mu_prev = [zeros(6,1);[0;0;0;1]; zeros(6,1); zeros(6,1)];
-                obj.Sigma_prev = eye(21,21);
-                obj.filter_enabled = false;
-                
-                obj.X_prev = eye(7);
-                obj.theta_prev = zeros(6,1);
-                obj.P_prev = eye(21);
-            end
-            
-            % If filter is enabled, initialize filter is not already initialized
-            if EnableFilter && ~obj.filter_enabled
-                if contact(1) == 1
-                    % Initialize with left foot at 0
-                    Rwi = Angles.Quaternion_to_Rotation(q_init);
-                    r0 = - Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
-%                     r0 = zeros(3,1);
-                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
-                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
-                    obj.Sigma_prev = obj.Sigma_prior;
-                    obj.filter_enabled = true;
-
-                elseif contact(2) == 1
-                    % Initialize with right foot at 0
-                    Rwi = Angles.Quaternion_to_Rotation(q_init);
-                    r0 = - Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-%                     r0 = zeros(3,1);
-                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
-                    obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
-                    obj.Sigma_prev = obj.Sigma_prior;
-                    obj.filter_enabled = true;
-                end
-                
-                % Convert to new state representation
-                [obj.X_prev, obj.theta_prev] = obj.Construct_State(Angles.Quaternion_to_Rotation(obj.mu_prev(7:10))', obj.mu_prev(4:6), obj.mu_prev(1:3), obj.mu_prev(11:13), obj.mu_prev(14:16), obj.mu_prev(20:22), obj.mu_prev(17:19));
-                obj.P_prev = obj.Sigma_prev([7:9,4:6,1:3,10:12,13:15,19:21,16:18],[7:9,4:6,1:3,10:12,13:15,19:21,16:18]);
-            end
-
-            % Reset Filter if flight phase happens for longer than 100ms
-            if contact(1) ~= 1 && contact(2) ~= 1
-                obj.flight_phase = true;
-            else
-                obj.t_liftoff = t;
-                obj.flight_phase = false;
-            end
-            if (t - obj.t_liftoff) > 0.1
-                obj.filter_enabled = false;
-            end
-            
-            %% Predict state using IMU measurements            
-            [R, v, p, dR, dL, bg, ba] = obj.Separate_State(obj.X_prev, obj.theta_prev);
-            
-            % Bias corrected IMU information
-            w_k = w - bg;    % {I}_w_{WI}
-            a_k = a - ba;    % {I}_a_{WI}
-            
-            % Base Pose Dynamics
-            R_pred = R * Angles.Exp(w_k *obj.dt);
-            v_pred = v + (R*a_k + obj.g)*obj.dt;
-            p_pred = p + v*obj.dt + 0.5*(R*a_k + obj.g)*obj.dt^2;
-            
-            % Foot Position Dynamics
-            dR_off = p_pred + R_pred * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-            dL_off = p_pred + R_pred * p_VectorNav_to_LeftToeBottom(e);  % {W}_p_{WL}
-            dR_pred = contact(2)*dR + (1-contact(2))*dR_off;
-            dL_pred = contact(1)*dL + (1-contact(1))*dL_off;
-            
-            % Bias Dynamics
-            bg_pred = bg; 
-            ba_pred = ba;
-            
-            % Construct predicted state
-            [X_pred, theta_pred] = obj.Construct_State(R_pred, v_pred, p_pred, dR_pred, dL_pred, bg_pred, ba_pred);
-
-            % Linearized invariant error dynamics
-            Fc = [          zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),                 -R, zeros(3);
-                  Angles.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3),  -Angles.skew(v)*R,       -R;
-                            zeros(3),   eye(3), zeros(3), zeros(3), zeros(3),  -Angles.skew(p)*R, zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Angles.skew(dR)*R, zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Angles.skew(dL)*R, zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3),  zeros(3);
-                            zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),          zeros(3),  zeros(3)];
-
-            Fk = eye(21) + Fc*obj.dt; % Discretized 
-                        
-            Lc = blkdiag(obj.Adjoint(obj.X_prev), eye(6));
-            hR_R = R_VectorNav_to_RightToeBottom(e);
-            hR_L = R_VectorNav_to_LeftToeBottom(e);
-            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
-            Qk = Fk*Lc*Q*Lc'*Fk'*obj.dt; % Discretized
-
-            
-            % Predict Covariance
-            P_pred = zeros(21,21);
-            if ~obj.enable_bias_estimation
-                P_pred(1:15,1:15) = Fk(1:15,1:15)*obj.P_prev(1:15,1:15)*Fk(1:15,1:15)' + Qk(1:15,1:15);
-            else
-                P_pred = Fk*obj.P_prev*Fk' + Qk;
-            end
-                        
-            
-            %% Update state using encoder measurements
-            
-            if contact(2) == 1 && contact(1) == 1 && obj.ekf_update_enabled 
-                % Double Support
-                s_pR = p_VectorNav_to_RightToeBottom(e);
-                s_pL = p_VectorNav_to_LeftToeBottom(e);
-                JR = J_VectorNav_to_RightToeBottom(e);
-                JL = J_VectorNav_to_LeftToeBottom(e);
-                
-                % Measurement Model
-                YR = [s_pR; 0; 1; -1; 0];
-                YL = [s_pL; 0; 1; 0; -1];
-                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3);
-                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
-                 
-                % Compute Kalman Gain
-                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
-                            R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);
-                PI = [eye(3), zeros(3,4), zeros(3,7);
-                      zeros(3,7), eye(3), zeros(3,4)];
-                S = H*P_pred*H' + N;
-                K = (P_pred*H')/S;
-                
-                % Update State
-                [dX, dtheta] = obj.exp(K*PI*[(X_pred*YR); (X_pred*YL)]);
-                X = dX*X_pred;
-                theta = theta_pred + dtheta;
-                
-                % Update Covariance
-                P = zeros(21);
-                if ~obj.enable_bias_estimation
-                    tmp1 = K*H; 
-                    tmp2 = K*N*K';
-                    P(1:15,1:15) = (eye(15) - tmp1(1:15,1:15))*P_pred(1:15,1:15)*(eye(15) - tmp1(1:15,1:15))' + tmp2(1:15,1:15); % Joseph update form
-                else
-                    P = (eye(21) - K*H)*P_pred*(eye(21) - K*H)' + K*N*K'; % Joseph update form
-                end
-                K = K(1:15,1:3);
-                                
-            elseif contact(2) == 1 && obj.ekf_update_enabled
-                % Single Support Right    
-                s_pR = p_VectorNav_to_RightToeBottom(e);
-                JR = J_VectorNav_to_RightToeBottom(e);
-                
-                % Measurement Model
-                YR = [s_pR; 0; 1; -1; 0];
-                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
-                 
-                % Compute Kalman Gain
-                N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
-                PI = [eye(3), zeros(3,4)];
-                S = H*P_pred*H' + N;
-                K = (P_pred*H')/S;
-               
-                % Update State
-                [dX, dtheta] = obj.exp(K*PI*(X_pred*YR));
-                X = dX*X_pred;
-                theta = theta_pred + dtheta;
-                
-                % Update Covariance
-                P = zeros(21);
-                if ~obj.enable_bias_estimation
-                    tmp1 = K*H; 
-                    tmp2 = K*N*K';
-                    P(1:15,1:15) = (eye(15) - tmp1(1:15,1:15))*P_pred(1:15,1:15)*(eye(15) - tmp1(1:15,1:15))' + tmp2(1:15,1:15); % Joseph update form
-                else
-                    P = (eye(21) - K*H)*P_pred*(eye(21) - K*H)' + K*N*K'; % Joseph update form
-                end
-                K = K(1:15,:);
-                
-                
-            elseif contact(1) == 1 && obj.ekf_update_enabled
-                % Single Support Left
-                s_pL = p_VectorNav_to_LeftToeBottom(e);
-                JL = J_VectorNav_to_LeftToeBottom(e);
-
-                % Measurement Model
-                YL = [s_pL; 0; 1; 0; -1];
-                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
-                
-                % Compute Kalman Gain
-                N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
-                PI = [eye(3), zeros(3,4)];
-                S = H*P_pred*H' + N;
-                K = (P_pred*H')/S;
-                
-                % Update State
-                [dX, dtheta] = obj.exp(K*PI*(X_pred*YL));
-                X = dX*X_pred;
-                theta = theta_pred + dtheta;
-                
-                % Update Covariance
-                P = zeros(21);
-                if ~obj.enable_bias_estimation
-                    tmp1 = K*H; 
-                    tmp2 = K*N*K';
-                    P(1:15,1:15) = (eye(15) - tmp1(1:15,1:15))*P_pred(1:15,1:15)*(eye(15) - tmp1(1:15,1:15))' + tmp2(1:15,1:15); % Joseph update form
-                else
-                    P = (eye(21) - K*H)*P_pred*(eye(21) - K*H)' + K*N*K'; % Joseph update form
-                end
-                K = K(1:15,:);
-                
-            else
-                % Flight (no measurements) or update disabled
-                X = X_pred;
-                theta = theta_pred;
-                P = P_pred;
-                K = zeros(15,3);
-            end
-            
-            % If filter is disabled, output initial values
-            if ~obj.filter_enabled
-                [X, theta] = obj.Construct_State(eye(3), zeros(3,1), zeros(3,1), zeros(3,1), zeros(3,1), zeros(3,1), zeros(3,1));
-                P = eye(21);
-            end
-            
-            % Overwrite bias term if estimation is disabled
-            if ~obj.enable_bias_estimation
-                theta = theta_pred;
             end
             
             % Store last values
-            obj.X_prev = X;
-            obj.theta_prev = theta;
-            obj.P_prev = P;
+            obj.w_prev = w;
+            obj.a_prev = a;
+            obj.encoders_prev = encoders;
             obj.contact_prev = contact;
-            
-            % Store values for output logging
-            [R, v, p, dR, dL, bw, ba] = obj.Separate_State(X, theta);
-
-            % Convert to original EKF format for logging
-            mu = [p; v; Angles.Rotation_to_Quaternion(R'); dR; dL; ba; bw];
-            Sigma = P([7:9,4:6,1:3,10:12,13:15,19:21,16:18],[7:9,4:6,1:3,10:12,13:15,19:21,16:18]);
-
-            % Output enable flag
+            obj.t_prev = t;
+           
+            % Output
+            X = obj.X;
+            theta = obj.theta;
+            P = obj.P;
             enabled = double(obj.filter_enabled);
-                                   
+   
+            
         end % stepImpl
 
+        % Define Outputs =====================================================
+        function resetImpl(~)
+            %RESETIMPL Reset System object states.
+        end % resetImpl
+        
+        function [X, theta, P, enabled] = getOutputSizeImpl(~)
+            %GETOUTPUTSIZEIMPL Get sizes of output ports.
+            X = [7, 7];
+            theta = [6,1];
+            P = [21,21];
+            enabled = [1,1];
+        end % getOutputSizeImpl
+        
+        function [X, theta, P, enabled] = getOutputDataTypeImpl(~)
+            %GETOUTPUTDATATYPEIMPL Get data types of output ports.
+            X = 'double';
+            theta = 'double';
+            P = 'double';
+            enabled = 'double';
+        end % getOutputDataTypeImpl
+        
+        function [X, theta, P, enabled] = isOutputComplexImpl(~)
+            %ISOUTPUTCOMPLEXIMPL Complexity of output ports.
+            X = false;
+            theta = false;
+            P = false;
+            enabled = false;
+        end % isOutputComplexImpl
+        
+        function [X, theta, P, enabled] = isOutputFixedSizeImpl(~)
+            %ISOUTPUTFIXEDSIZEIMPL Fixed-size or variale-size output ports.
+            X = true;
+            theta = true;
+            P = true;
+            enabled = true;
+        end % isOutputFixedSizeImpl
+        
+    end
+        
+    %% PRIVATE METHODS =====================================================
+    methods (Access = private)
+        
         function [R, v, p, dR, dL, bg, ba] = Separate_State(~, X, theta)
             % Separate state vector into components
             R = X(1:3,1:3);  % Orientation
@@ -433,57 +247,198 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             X = [R, v, p, dR, dL; 0,0,0,1,0,0,0; 0,0,0,0,1,0,0; 0,0,0,0,0,1,0; 0,0,0,0,0,0,1];
             theta = [bg; ba];
         end
- 
-        function [dX, dtheta] = exp(~, v)
+        
+        function [A] = skew(~, v)
+            % Convert from vector to skew symmetric matrix
+            A = [    0, -v(3),  v(2);
+                  v(3),     0, -v(1);
+                  -v(2),  v(1),   0];
+        end
+        
+        function [dX, dtheta] = exp(obj, v)
             % Exponential map of SE_3(3)
-        	dX = expm([Angles.skew(v(1:3)), v(4:6), v(7:9), v(10:12), v(13:15); zeros(4,7)]);
+        	dX = expm([obj.skew(v(1:3)), v(4:6), v(7:9), v(10:12), v(13:15); zeros(4,7)]);
             dtheta = v(16:21);
         end
         
-        function AdjX = Adjoint(~, X)
+        function AdjX = Adjoint(obj, X)
             % Adjoint of SE_3(3)
             AdjX = [X(1:3,1:3), zeros(3), zeros(3), zeros(3), zeros(3);
-                    Angles.skew(X(1:3,4))*X(1:3,1:3), X(1:3,1:3), zeros(3), zeros(3), zeros(3);
-                    Angles.skew(X(1:3,5))*X(1:3,1:3), zeros(3), X(1:3,1:3), zeros(3), zeros(3);
-                    Angles.skew(X(1:3,6))*X(1:3,1:3), zeros(3), zeros(3), X(1:3,1:3), zeros(3);
-                    Angles.skew(X(1:3,7))*X(1:3,1:3), zeros(3), zeros(3), zeros(3), X(1:3,1:3)];
+                    obj.skew(X(1:3,4))*X(1:3,1:3), X(1:3,1:3), zeros(3), zeros(3), zeros(3);
+                    obj.skew(X(1:3,5))*X(1:3,1:3), zeros(3), X(1:3,1:3), zeros(3), zeros(3);
+                    obj.skew(X(1:3,6))*X(1:3,1:3), zeros(3), zeros(3), X(1:3,1:3), zeros(3);
+                    obj.skew(X(1:3,7))*X(1:3,1:3), zeros(3), zeros(3), zeros(3), X(1:3,1:3)];
         end
         
-        %% Define Outputs
-        function resetImpl(~)
-            %RESETIMPL Reset System object states.
-        end % resetImpl
+        function [] = InitializeBias(obj, w, a, X_init)
+            % Function to initiaze IMU bias
+            if obj.static_bias_initialization
+                if ~obj.bias_initialized
+                    if norm(a) > 0 && norm(w) > 0 % Wait for valid signal
+                        if obj.imu_init_count <= obj.imu_init_total_count
+                            % Accumulate vector of imu data
+                            Rwi = X_init(1:3,1:3);
+                            obj.a_init_vec(:,obj.imu_init_count) = Rwi'*(Rwi*a + obj.g);
+                            obj.w_init_vec(:,obj.imu_init_count) = w;
+                            obj.imu_init_count = obj.imu_init_count + 1;
+                        else
+                            % Use imu data vector to estimate initial biases
+                            obj.ba0 = mean(obj.a_init_vec,2);
+                            obj.bg0 = mean(obj.w_init_vec,2);
+                            obj.bias_initialized = true;
+                        end
+                    end
+                end
+            else
+                obj.bias_initialized = true;
+            end
+        end
         
-        function [mu, Sigma, enabled, K] = getOutputSizeImpl(~)
-            %GETOUTPUTSIZEIMPL Get sizes of output ports.
-            mu = [22, 1];
-            Sigma = [21,21];
-            enabled = [1,1];
-            K = [15,3];
-        end % getOutputSizeImpl
+        function [] = InitializeFilter(obj, enable, X_init)
+            % Attempt to enable filter (successful if enable is true, and
+            % at least one foot is on the ground)
+            if enable && ~obj.filter_enabled
+                obj.X = X_init;
+                obj.theta = [obj.bg0; obj.ba0];
+                obj.P = obj.P_prior;
+                obj.filter_enabled = true;
+            end
+            
+            % If filter is disabled, zero everything
+            if ~enable || ~obj.filter_enabled
+                obj.X = eye(7);
+                obj.theta = zeros(6,1);
+                obj.P = eye(21);
+                obj.filter_enabled = false;
+            end
+        end
         
-        function [mu, Sigma, enabled, K] = getOutputDataTypeImpl(~)
-            %GETOUTPUTDATATYPEIMPL Get data types of output ports.
-            mu = 'double';
-            Sigma = 'double';
-            enabled = 'double';
-            K = 'double';
-        end % getOutputDataTypeImpl
+        function [] = Predict_State(obj, w, a, encoders, contact, dt)
+            % Right-Invariant Extended Kalman Filter Prediction Step
+           [R, v, p, dR, dL, bg, ba] = obj.Separate_State(obj.X, obj.theta);
+            
+            % Bias corrected IMU information
+            w_k = w - bg;    % {I}_w_{WI}
+            a_k = a - ba;    % {I}_a_{WI}
+            
+            % Base Pose Dynamics
+            R_pred = R * Angles.Exp(w_k*dt);
+            v_pred = v + (R*a_k + obj.g)*dt;
+            p_pred = p + v*dt + 0.5*(R*a_k + obj.g)*dt^2;
+            
+            % Foot Position Dynamics
+            dR_off = p_pred + R_pred * p_VectorNav_to_RightToeBottom(encoders); % {W}_p_{WR}
+            dL_off = p_pred + R_pred * p_VectorNav_to_LeftToeBottom(encoders);  % {W}_p_{WL}
+            dR_pred = contact(2)*dR + (1-contact(2))*dR_off;
+            dL_pred = contact(1)*dL + (1-contact(1))*dL_off;
+            
+            % Bias Dynamics
+            bg_pred = bg; 
+            ba_pred = ba;
+            
+            % Linearized invariant error dynamics
+            Fc = [       zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),              -R, zeros(3);
+                  obj.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3),  -obj.skew(v)*R,       -R;
+                         zeros(3),   eye(3), zeros(3), zeros(3), zeros(3),  -obj.skew(p)*R, zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -obj.skew(dR)*R, zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -obj.skew(dL)*R, zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3)];
+
+            Fk = eye(21) + Fc*dt; % Discretized 
+                        
+            Lc = blkdiag(obj.Adjoint(obj.X), eye(6));
+            hR_R = R_VectorNav_to_RightToeBottom(encoders);
+            hR_L = R_VectorNav_to_LeftToeBottom(encoders);
+            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
+            Qk = Fk*Lc*Q*Lc'*Fk'*dt; % Discretized
+            
+            % Construct predicted state
+            [obj.X, obj.theta] = obj.Construct_State(R_pred, v_pred, p_pred, dR_pred, dL_pred, bg_pred, ba_pred);
+            
+            % Predict Covariance
+            obj.P = Fk * obj.P * Fk' + Qk;
+        end
         
-        function [mu, Sigma, enabled, K] = isOutputComplexImpl(~)
-            %ISOUTPUTCOMPLEXIMPL Complexity of output ports.
-            mu = false;
-            Sigma = false;
-            enabled = false;
-            K = false;
-        end % isOutputComplexImpl
+        function [] = Update_State(obj, Y, H, N, PI)
+            % Update State and Covariance from a measurement
+            % Compute Kalman Gain
+            S = H * obj.P * H' + N;
+            K = (obj.P * H')/S;
+            
+            % Copy X along the diagonals if more than one measurement
+            X_cell = repmat({obj.X}, 1, length(Y)/7);
+            Z = blkdiag(X_cell{:}) * Y;
+            
+            % Update State
+            [dX, dtheta] = obj.exp(K*PI*Z);
+            obj.X = dX * obj.X;
+            obj.theta = obj.theta + dtheta;
+            
+            % Update Covariance
+            obj.P = (eye(21) - K*H)* obj.P *(eye(21) - K*H)' + K*N*K'; % Joseph update form
+            
+        end
         
-        function [mu, Sigma, enabled, K] = isOutputFixedSizeImpl(~)
-            %ISOUTPUTFIXEDSIZEIMPL Fixed-size or variale-size output ports.
-            mu = true;
-            Sigma = true;
-            enabled = true;
-            K = true;
-        end % isOutputFixedSizeImpl
+        function [] = Update_ForwardKinematics(obj, encoders, contact)
+            % Function to perform Right-Invariant EKF update from forward
+            % kinematic measurements
+            
+            R_pred = obj.X(1:3,1:3);
+            
+            if contact(2) == 1 && contact(1) == 1 
+                % Double Support
+                s_pR = p_VectorNav_to_RightToeBottom(encoders);
+                s_pL = p_VectorNav_to_LeftToeBottom(encoders);
+                JR = J_VectorNav_to_RightToeBottom(encoders);
+                JL = J_VectorNav_to_LeftToeBottom(encoders);
+                
+                % Measurement Model
+                Y = [s_pR; 0; 1; -1; 0; 
+                     s_pL; 0; 1; 0; -1];
+                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3);
+                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
+                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
+                            R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);  
+                PI = [eye(3), zeros(3,4), zeros(3,7);
+                     zeros(3,7), eye(3), zeros(3,4)];
+
+                % Update State
+                obj.Update_State(Y, H, N, PI);
+                        
+            elseif contact(2) == 1 
+                % Single Support Right    
+                s_pR = p_VectorNav_to_RightToeBottom(encoders);
+                JR = J_VectorNav_to_RightToeBottom(encoders);
+                
+                % Measurement Model
+                Y = [s_pR; 0; 1; -1; 0];
+                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
+                N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
+                PI = [eye(3), zeros(3,4)];
+
+                % Update State
+                obj.Update_State(Y, H, N, PI);
+                
+            elseif contact(1) == 1 
+                % Single Support Left
+                s_pL = p_VectorNav_to_LeftToeBottom(encoders);
+                JL = J_VectorNav_to_LeftToeBottom(encoders);
+
+                % Measurement Model
+                Y = [s_pL; 0; 1; 0; -1];
+                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
+                N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
+                PI = [eye(3), zeros(3,4)];
+
+                % Update State
+                obj.Update_State(Y, H, N, PI);
+                
+            end
+            
+            
+            
+        end        
+       
     end % methods
 end % classdef

@@ -1,5 +1,6 @@
 %% Set sample times 
-cassieParameters = CassieParameters;
+%cassieParameters = CassieParameters;
+simulationInitFcn;
 
 EKF_SampleTime = 1/2000;
 Pose_UDP_SampleTime = 1/2000;
