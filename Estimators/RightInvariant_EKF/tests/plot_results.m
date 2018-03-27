@@ -117,5 +117,34 @@ title('Velocity (Body) - z')
 ylabel('m/s')
 xlabel('time (sec)')
 
+%% Position Plot
+figure(3)
+EstimateLine = 'r-';
+TrueLine = 'k--';
+LineWidth = 2;
 
+subplot(3,1,1)
+grid on; hold on;
+plot(t, p(1,:), EstimateLine, 'LineWidth', LineWidth)
+plot(t, p_true(1,:), TrueLine, 'LineWidth', LineWidth)
+legend('Estimate', 'True')
+title('Position (World) - x')
+ylabel('m')
+
+subplot(3,1,2)
+grid on; hold on;
+plot(t, p(2,:), EstimateLine, 'LineWidth', LineWidth)
+plot(t, p_true(2,:), TrueLine, 'LineWidth', LineWidth)
+legend('Estimate', 'True')
+title('Position (World) - y')
+ylabel('m')
+
+subplot(3,1,3)
+grid on; hold on;
+plot(t, p(3,:), EstimateLine, 'LineWidth', LineWidth)
+plot(t, p_true(3,:), TrueLine, 'LineWidth', LineWidth)
+legend('Estimate', 'True')
+title('Position (World) - z')
+ylabel('m')
+xlabel('time (sec)')
 

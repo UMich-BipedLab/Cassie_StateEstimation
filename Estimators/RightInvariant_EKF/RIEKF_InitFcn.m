@@ -33,10 +33,16 @@ accel_bias_noise_std = 0.001*ones(3,1);
 contact_noise_std = 0.05*ones(3,1);
 encoder_noise_std = deg2rad(0.5)*ones(14,1); 
 
+% Set landmark measurement noise std
+landmark_noise_std = 0.1*ones(3,1);
+
 % Priors
-prior_base_pose_std = 0.01*ones(6,1);
+prior_base_pose_std = 1.01*ones(6,1);
 prior_base_velocity_std = 0.1*ones(3,1);
 prior_contact_position_std = 0.1*ones(3,1);
 prior_gyro_bias_std = 0.01*ones(3,1);
 prior_accel_bias_std = 0.05*ones(3,1);
 prior_forward_kinematics_std = 0.01*ones(3,1);
+
+
+

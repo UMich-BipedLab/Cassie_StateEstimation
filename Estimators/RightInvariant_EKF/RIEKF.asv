@@ -412,7 +412,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 % Measurement Model
                 Y = [s_pR; 0; 1; -1; 0; 
                      s_pL; 0; 1; 0; -1];
-                b = zeros(14,1);
+                b = zeros(
                 H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3);
                      zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                 N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
@@ -421,7 +421,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                      zeros(3,7), eye(3), zeros(3,4)];
 
                 % Update State
-                obj.Update_State(Y, b, H, N, PI);
+                obj.Update_State(Y, H, N, PI);
                         
             elseif contact(2) == 1 
                 % Single Support Right    
@@ -430,13 +430,12 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 
                 % Measurement Model
                 Y = [s_pR; 0; 1; -1; 0];
-                b = zeros(7,1);
                 H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
                 N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
                 PI = [eye(3), zeros(3,4)];
 
                 % Update State
-                obj.Update_State(Y, b, H, N, PI);
+                obj.Update_State(Y, H, N, PI);
                 
             elseif contact(1) == 1 
                 % Single Support Left
@@ -445,13 +444,12 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
 
                 % Measurement Model
                 Y = [s_pL; 0; 1; 0; -1];
-                b = zeros(7,1);
                 H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
                 N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
                 PI = [eye(3), zeros(3,4)];
 
                 % Update State
-                obj.Update_State(Y, b, H, N, PI);
+                obj.Update_State(Y, H, N, PI);
                 
             end
             
