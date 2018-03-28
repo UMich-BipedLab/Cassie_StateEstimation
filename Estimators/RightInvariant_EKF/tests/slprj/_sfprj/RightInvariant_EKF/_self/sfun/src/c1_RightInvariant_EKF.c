@@ -24,7 +24,7 @@ static const mxArray* sf_opaque_get_hover_data_for_msg(void *chartInstance,
 /* Variable Definitions */
 static real_T _sfTime_;
 static const char * c1_debug_family_names[14] = { "enable", "R", "N", "indices",
-  "measurment", "nargin", "nargout", "position", "orientation", "pulse1",
+  "measurement", "nargin", "nargout", "position", "orientation", "pulse1",
   "pulse2", "landmark_positions", "landmark_true_noise_std", "landmarks" };
 
 static const char * c1_b_debug_family_names[4] = { "nargin", "nargout", "v",
@@ -466,7 +466,7 @@ static void c1_chartstep_c1_RightInvariant_EKF
   real_T c1_N;
   real_T c1_indices_data[7];
   int32_T c1_indices_sizes;
-  real_T c1_measurment[3];
+  real_T c1_measurement[3];
   real_T c1_nargin = 6.0;
   real_T c1_nargout = 1.0;
   real_T c1_b_landmarks_data[40];
@@ -718,7 +718,7 @@ static void c1_chartstep_c1_RightInvariant_EKF
   _SFD_SYMBOL_SCOPE_ADD_EML_DYN_IMPORTABLE(c1_indices_data, (const int32_T *)
     &c1_indices_sizes, NULL, 0, 3, (void *)c1_f_sf_marshallOut, (void *)
     c1_d_sf_marshallIn);
-  _SFD_SYMBOL_SCOPE_ADD_EML_IMPORTABLE(c1_measurment, 4U, c1_b_sf_marshallOut,
+  _SFD_SYMBOL_SCOPE_ADD_EML_IMPORTABLE(c1_measurement, 4U, c1_b_sf_marshallOut,
     c1_c_sf_marshallIn);
   _SFD_SYMBOL_SCOPE_ADD_EML_IMPORTABLE(&c1_nargin, 5U, c1_d_sf_marshallOut,
     c1_b_sf_marshallIn);
@@ -1006,7 +1006,7 @@ static void c1_chartstep_c1_RightInvariant_EKF
 
       for (c1_b_j = 1; c1_b_j <= c1_k; c1_b_j++) {
         c1_indices_data[sf_eml_array_bounds_check(sfGlobalDebugInstanceStruct,
-          chartInstance->S, 1U, 559, 22, MAX_uint32_T, c1_b_j, 1,
+          chartInstance->S, 1U, 560, 22, MAX_uint32_T, c1_b_j, 1,
           c1_indices_sizes) - 1] = c1_rp[c1_b_j - 1];
       }
     } else {
@@ -1025,7 +1025,7 @@ static void c1_chartstep_c1_RightInvariant_EKF
           c1_selected[(int32_T)c1_b_r - 1] = true;
           c1_nsel++;
           c1_indices_data[sf_eml_array_bounds_check(sfGlobalDebugInstanceStruct,
-            chartInstance->S, 1U, 559, 22, MAX_uint32_T, c1_nsel, 1,
+            chartInstance->S, 1U, 560, 22, MAX_uint32_T, c1_nsel, 1,
             c1_indices_sizes) - 1] = c1_b_r;
         }
       }
@@ -1066,7 +1066,7 @@ static void c1_chartstep_c1_RightInvariant_EKF
 
       c1_randn(chartInstance, c1_g_a);
       for (c1_i44 = 0; c1_i44 < 3; c1_i44++) {
-        c1_measurment[c1_i44] = c1_d_y[c1_i44] +
+        c1_measurement[c1_i44] = c1_d_y[c1_i44] +
           c1_b_landmark_true_noise_std[c1_i44] * c1_g_a[c1_i44];
       }
 
@@ -1080,11 +1080,14 @@ static void c1_chartstep_c1_RightInvariant_EKF
         c1_varargin_1_data[c1_i47] = c1_b_landmarks_data[c1_i47];
       }
 
-      c1_b_varargin_2[0] = c1_indices_data[sf_eml_array_bounds_check
-        (sfGlobalDebugInstanceStruct, chartInstance->S, 1U, 767, 12,
-         MAX_uint32_T, c1_indices_sizes, 1, c1_indices_sizes) - 1];
+      c1_b_varargin_2[0] = c1_b_landmark_positions[(sf_eml_array_bounds_check
+        (sfGlobalDebugInstanceStruct, chartInstance->S, 1U, 788, 12,
+         MAX_uint32_T, (int32_T)c1_indices_data[sf_eml_array_bounds_check
+         (sfGlobalDebugInstanceStruct, chartInstance->S, 1U, 788, 12,
+          MAX_uint32_T, c1_indices_sizes, 1, c1_indices_sizes) - 1], 1, 7) - 1) <<
+        2];
       for (c1_i48 = 0; c1_i48 < 3; c1_i48++) {
-        c1_b_varargin_2[c1_i48 + 1] = c1_measurment[c1_i48];
+        c1_b_varargin_2[c1_i48 + 1] = c1_measurement[c1_i48];
       }
 
       c1_m_a = (real_T)c1_varargin_1_sizes[0];
@@ -1560,21 +1563,21 @@ static void c1_d_emlrt_marshallIn(SFc1_RightInvariant_EKFInstanceStruct
 static void c1_c_sf_marshallIn(void *chartInstanceVoid, const mxArray
   *c1_mxArrayInData, const char_T *c1_varName, void *c1_outData)
 {
-  const mxArray *c1_measurment;
+  const mxArray *c1_measurement;
   const char_T *c1_identifier;
   emlrtMsgIdentifier c1_thisId;
   real_T c1_y[3];
   int32_T c1_i74;
   SFc1_RightInvariant_EKFInstanceStruct *chartInstance;
   chartInstance = (SFc1_RightInvariant_EKFInstanceStruct *)chartInstanceVoid;
-  c1_measurment = sf_mex_dup(c1_mxArrayInData);
+  c1_measurement = sf_mex_dup(c1_mxArrayInData);
   c1_identifier = c1_varName;
   c1_thisId.fIdentifier = c1_identifier;
   c1_thisId.fParent = NULL;
   c1_thisId.bParentIsCell = false;
-  c1_d_emlrt_marshallIn(chartInstance, sf_mex_dup(c1_measurment), &c1_thisId,
+  c1_d_emlrt_marshallIn(chartInstance, sf_mex_dup(c1_measurement), &c1_thisId,
                         c1_y);
-  sf_mex_destroy(&c1_measurment);
+  sf_mex_destroy(&c1_measurement);
   for (c1_i74 = 0; c1_i74 < 3; c1_i74++) {
     (*(real_T (*)[3])c1_outData)[c1_i74] = c1_y[c1_i74];
   }
@@ -2779,10 +2782,10 @@ extern void utFree(void*);
 
 void sf_c1_RightInvariant_EKF_get_check_sum(mxArray *plhs[])
 {
-  ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(3154270068U);
-  ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(1857096980U);
-  ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(3487679446U);
-  ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(3605910332U);
+  ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(1097404542U);
+  ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(1968390677U);
+  ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(3245350910U);
+  ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(329753227U);
 }
 
 mxArray* sf_c1_RightInvariant_EKF_get_post_codegen_info(void);
@@ -2796,7 +2799,7 @@ mxArray *sf_c1_RightInvariant_EKF_get_autoinheritance_info(void)
     autoinheritanceFields);
 
   {
-    mxArray *mxChecksum = mxCreateString("AWUrEGGW8RMKkY9lt9GGRC");
+    mxArray *mxChecksum = mxCreateString("uQbUgOCuP5roCPBEv2fSbF");
     mxSetField(mxAutoinheritanceInfo,0,"checksum",mxChecksum);
   }
 
@@ -3106,10 +3109,10 @@ static void chart_debug_initialization(SimStruct *S, unsigned int
 
         /* Initialization of MATLAB Function Model Coverage */
         _SFD_CV_INIT_EML(0,1,1,0,2,0,0,0,0,1,2,1);
-        _SFD_CV_INIT_EML_FCN(0,0,"eML_blk_kernel",0,-1,838);
+        _SFD_CV_INIT_EML_FCN(0,0,"eML_blk_kernel",0,-1,861);
         _SFD_CV_INIT_EML_IF(0,1,0,155,175,195,223);
-        _SFD_CV_INIT_EML_IF(0,1,1,297,306,-1,833);
-        _SFD_CV_INIT_EML_WHILE(0,1,0,587,611,829);
+        _SFD_CV_INIT_EML_IF(0,1,1,297,306,-1,856);
+        _SFD_CV_INIT_EML_WHILE(0,1,0,588,612,852);
 
         {
           static int condStart[] = { 158, 169 };
@@ -3201,7 +3204,7 @@ static void chart_debug_initialize_data_addresses(SimStruct *S)
 
 static const char* sf_get_instance_specialization(void)
 {
-  return "swx4JCyZUE6TSkun032G4k";
+  return "sz0jTxxTaSfTBRCHmefrhrG";
 }
 
 static void sf_opaque_initialize_c1_RightInvariant_EKF(void *chartInstanceVar)
@@ -3343,10 +3346,10 @@ static void mdlSetWorkWidths_c1_RightInvariant_EKF(SimStruct *S)
   }
 
   ssSetOptions(S,ssGetOptions(S)|SS_OPTION_WORKS_WITH_CODE_REUSE);
-  ssSetChecksum0(S,(2154877095U));
-  ssSetChecksum1(S,(3265587196U));
-  ssSetChecksum2(S,(838357559U));
-  ssSetChecksum3(S,(3107067249U));
+  ssSetChecksum0(S,(299517679U));
+  ssSetChecksum1(S,(2740434082U));
+  ssSetChecksum2(S,(893941388U));
+  ssSetChecksum3(S,(3791495047U));
   ssSetmdlDerivatives(S, NULL);
   ssSetExplicitFCSSCtrl(S,1);
   ssSetStateSemanticsClassicAndSynchronous(S, true);
