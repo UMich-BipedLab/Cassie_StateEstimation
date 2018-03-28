@@ -2,7 +2,6 @@
 
 #include "RightInvariant_EKF_sfun.h"
 #include "RightInvariant_EKF_sfun_debug_macros.h"
-#include "c1_RightInvariant_EKF.h"
 #include "c2_RightInvariant_EKF.h"
 #include "c40_RightInvariant_EKF.h"
 
@@ -30,11 +29,6 @@ void RightInvariant_EKF_terminator(void)
 unsigned int sf_RightInvariant_EKF_method_dispatcher(SimStruct *simstructPtr,
   unsigned int chartFileNumber, const char* specsCksum, int_T method, void *data)
 {
-  if (chartFileNumber==1) {
-    c1_RightInvariant_EKF_method_dispatcher(simstructPtr, method, data);
-    return 1;
-  }
-
   if (chartFileNumber==2) {
     c2_RightInvariant_EKF_method_dispatcher(simstructPtr, method, data);
     return 1;
@@ -76,13 +70,6 @@ unsigned int sf_RightInvariant_EKF_process_check_sum_call( int nlhs, mxArray *
       unsigned int chartFileNumber;
       chartFileNumber = (unsigned int)mxGetScalar(prhs[2]);
       switch (chartFileNumber) {
-       case 1:
-        {
-          extern void sf_c1_RightInvariant_EKF_get_check_sum(mxArray *plhs[]);
-          sf_c1_RightInvariant_EKF_get_check_sum(plhs);
-          break;
-        }
-
        case 2:
         {
           extern void sf_c2_RightInvariant_EKF_get_check_sum(mxArray *plhs[]);
@@ -151,18 +138,6 @@ unsigned int sf_RightInvariant_EKF_autoinheritance_info( int nlhs, mxArray *
     unsigned int chartFileNumber;
     chartFileNumber = (unsigned int)mxGetScalar(prhs[1]);
     switch (chartFileNumber) {
-     case 1:
-      {
-        if (strcmp(aiChksum, "xnX6DPkXSAEgDYfsFgx1DB") == 0) {
-          extern mxArray *sf_c1_RightInvariant_EKF_get_autoinheritance_info(void);
-          plhs[0] = sf_c1_RightInvariant_EKF_get_autoinheritance_info();
-          break;
-        }
-
-        plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
-        break;
-      }
-
      case 2:
       {
         if (strcmp(aiChksum, "cDssarRYE4MmcIMu2238WF") == 0) {
@@ -223,17 +198,6 @@ unsigned int sf_RightInvariant_EKF_get_eml_resolved_functions_info( int nlhs,
     unsigned int chartFileNumber;
     chartFileNumber = (unsigned int)mxGetScalar(prhs[1]);
     switch (chartFileNumber) {
-     case 1:
-      {
-        extern const mxArray
-          *sf_c1_RightInvariant_EKF_get_eml_resolved_functions_info(void);
-        mxArray *persistentMxArray = (mxArray *)
-          sf_c1_RightInvariant_EKF_get_eml_resolved_functions_info();
-        plhs[0] = mxDuplicateArray(persistentMxArray);
-        mxDestroyArray(persistentMxArray);
-        break;
-      }
-
      case 2:
       {
         extern const mxArray
@@ -291,15 +255,6 @@ unsigned int sf_RightInvariant_EKF_third_party_uses_info( int nlhs, mxArray *
     unsigned int chartFileNumber;
     chartFileNumber = (unsigned int)mxGetScalar(prhs[1]);
     switch (chartFileNumber) {
-     case 1:
-      {
-        if (strcmp(tpChksum, "sM6jw19MmtVGn2AtFHugBTG") == 0) {
-          extern mxArray *sf_c1_RightInvariant_EKF_third_party_uses_info(void);
-          plhs[0] = sf_c1_RightInvariant_EKF_third_party_uses_info();
-          break;
-        }
-      }
-
      case 2:
       {
         if (strcmp(tpChksum, "s68KJL4KQMPJgncb37M5v2G") == 0) {
@@ -346,15 +301,6 @@ unsigned int sf_RightInvariant_EKF_jit_fallback_info( int nlhs, mxArray * plhs[]
     unsigned int chartFileNumber;
     chartFileNumber = (unsigned int)mxGetScalar(prhs[1]);
     switch (chartFileNumber) {
-     case 1:
-      {
-        if (strcmp(tpChksum, "sM6jw19MmtVGn2AtFHugBTG") == 0) {
-          extern mxArray *sf_c1_RightInvariant_EKF_jit_fallback_info(void);
-          plhs[0] = sf_c1_RightInvariant_EKF_jit_fallback_info();
-          break;
-        }
-      }
-
      case 2:
       {
         if (strcmp(tpChksum, "s68KJL4KQMPJgncb37M5v2G") == 0) {
@@ -401,16 +347,6 @@ unsigned int sf_RightInvariant_EKF_updateBuildInfo_args_info( int nlhs, mxArray 
     unsigned int chartFileNumber;
     chartFileNumber = (unsigned int)mxGetScalar(prhs[1]);
     switch (chartFileNumber) {
-     case 1:
-      {
-        if (strcmp(tpChksum, "sM6jw19MmtVGn2AtFHugBTG") == 0) {
-          extern mxArray *sf_c1_RightInvariant_EKF_updateBuildInfo_args_info
-            (void);
-          plhs[0] = sf_c1_RightInvariant_EKF_updateBuildInfo_args_info();
-          break;
-        }
-      }
-
      case 2:
       {
         if (strcmp(tpChksum, "s68KJL4KQMPJgncb37M5v2G") == 0) {

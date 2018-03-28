@@ -1,0 +1,517 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Code Generation Report</title>
+<link rel="stylesheet" type="text/css" href="resources/eml_report.css" />
+<link rel="stylesheet" type="text/css" href="resources/jQuery/ui.resizable.css" />
+<link rel="stylesheet" type="text/css" href="index.css" />
+<style>
+	pre.code{
+		-moz-tab-size: 4; /* For Firefox */
+		-o-tab-size: 4; /* For Opera 10.6-12.1 */
+		tab-size: 4; /* For Chrome */
+	}
+</style>
+<script type="text/javascript" src="resources/jQuery/jquery-1.3.2.min.js"></script>
+<script type="text/javascript" src="resources/jQuery/jquery-ui-1.7.custom.min.js"></script>
+<script type="text/javascript" src="resources/jQuery/jquery.tablesorter.mod.js"></script>
+<script type="text/javascript" src="resources/jQuery/jquery.hotkeys-0.7.8.js"></script>
+<script type="text/javascript" src="resources/eml_report_interactions.js"></script>
+<script type="text/javascript" src="resources/eml_report_layout.js"></script>
+<script type="text/javascript" src="rtwshrink.js"></script>
+<script type="text/javascript">
+var localizedMessages = {
+    callSelectPrompt: "Select a function call:",
+    callSelectSource: "Calls from this function",
+    callSelectTarget: "Calls to this function",
+    infoForExpression: "Information for the selected expression:",
+    infoForVarType: "Information for the selected variable:",
+    infoForVarConst: "Information for the selected compile-time constant:",
+    infoForVarNone: "This variable does not have information associated with it.",
+    infoForFilter: "Matched {0}/{1} functions, {2}/{3} methods",
+    autoExtrinsicCall: "Only supported within the MATLAB environment."
+};
+var keyBindings = {
+        selectMCodeTab: "Ctrl+m",
+    selectCallStackTab: "Ctrl+k",
+        selectCCodeTab: "Ctrl+c",
+       selectReportTab: "Ctrl+r",
+     selectCenterPanel: "Ctrl+w",
+      selectSummaryTab: "Ctrl+s",
+     selectMessagesTab: "Ctrl+a",
+    selectWatchListTab: "Ctrl+v",
+     selectBuildLogTab: "Ctrl+t",
+    clearAllHighlights: "Esc"
+};
+var functionInfoTable = {
+ MATLABcode2: "Update_StaticLandmarks2_mcode.html",
+ fpath2: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/Cassie_StateEstimation/Estimators/RightInvariant_EKF/RIEKF.m",
+ lines2: [507, 508, 536],
+ watch2: "Update_StaticLandmarks2_watch.html",
+ title2: "Method: <span class='functionname'><a title='C:&nbsp;\\Users\\Ross&nbsp;Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m' class='functionlink' href=\"matlab: open('C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m')\">Update_StaticLandmarks</a></span>",
+ tcall2: [  ],
+ scall2: [  ],
+ MATLABcode5: "RIEKF5_mcode.html",
+ fpath5: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/Cassie_StateEstimation/Estimators/RightInvariant_EKF/RIEKF.m",
+ lines5: [0, 0, 0],
+ watch5: "RIEKF5_watch.html",
+ title5: "Method: <span class='functionname'><a title='C:&nbsp;\\Users\\Ross&nbsp;Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m' class='functionlink' href=\"matlab: open('C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m')\">RIEKF</a></span>",
+ tcall5: [  ],
+ scall5: [  ],
+ MATLABcode156: "setupImpl156_mcode.html",
+ fpath156: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/Cassie_StateEstimation/Estimators/RightInvariant_EKF/RIEKF.m",
+ lines156: [96, 97, 143],
+ watch156: "setupImpl156_watch.html",
+ title156: "Method: <span class='functionname'><a title='C:&nbsp;\\Users\\Ross&nbsp;Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m' class='functionlink' href=\"matlab: open('C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Estimators\\RightInvariant_EKF\\RIEKF.m')\">setupImpl</a></span>",
+ tcall156: [  ],
+ scall156: [ [ "From line 99 to CassieParameters_CassieParameters", "157#srcline0" ] ],
+ MATLABcode157: "CassieParameters_CassieParameters157_mcode.html",
+ fpath157: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/CassieSimulink/MATLAB/Common/CassieParameters.p",
+ lines157: [0, 0, 0],
+ watch157: "CassieParameters_CassieParameters157_watch.html",
+ title157: "Method: <span class='functionname'><a title='C:&nbsp;\\Users\\Ross&nbsp;Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\CassieSimulink\\MATLAB\\Common\\CassieParameters.p' class='functionlink' href=\"matlab: open('C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\CassieSimulink\\MATLAB\\Common\\CassieParameters.p')\">CassieParameters_CassieParameters</a></span>",
+ tcall157: [ [ "From setupImpl line 99", "156#F157N2:B257" ] ],
+ scall157: [  ],
+ rootFcnID: "2",
+ firstPage: "2",
+ htmlRoot: "C:/Users/Ross%20Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/Cassie_StateEstimation/Estimators/RightInvariant_EKF/tests/slprj/_cgxe/RightInvariant_EKF/info/"
+};
+var scriptInfoTable = {
+ fpath1: "",
+ fpath2: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/Cassie_StateEstimation/Estimators/RightInvariant_EKF/RIEKF.m",
+ fpath3: "",
+ fpath4: "",
+ fpath5: "C:/Program Files/MATLAB/R2016b/toolbox/shared/system/coder/+matlab/+system/+coder/System.p",
+ fpath6: "C:/Program Files/MATLAB/R2016b/toolbox/shared/system/coder/+matlab/+system/+coder/SystemProp.p",
+ fpath7: "C:/Program Files/MATLAB/R2016b/toolbox/coder/coder/+coder/+internal/matlabCodegenHandle.p",
+ fpath8: "C:/Program Files/MATLAB/R2016b/toolbox/shared/system/coder/+matlab/+system/+coder/SystemCore.p",
+ fpath9: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/toLogicalCheck.m",
+ fpath10: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/isnan.m",
+ fpath11: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/isBuiltInNumeric.m",
+ fpath12: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/error.m",
+ fpath13: "C:/Program Files/MATLAB/R2016b/toolbox/shared/system/coder/+matlab/+system/+mixin/+coder/Propagates.p",
+ fpath14: "",
+ fpath15: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/length.m",
+ fpath16: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/datafun/min.m",
+ fpath17: "C:/Program Files/MATLAB/R2016b/toolbox/shared/coder/coder/+coder/+internal/narginchk.m",
+ fpath18: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elfun/floor.m",
+ fpath19: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/applyScalarFunctionInPlace.m",
+ fpath20: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/+scalar/floor.m",
+ fpath21: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/minOrMax.m",
+ fpath22: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/scalarEg.m",
+ fpath23: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/fixedpoint/isnumerictype.m",
+ fpath24: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/fixedpoint/isfimath.m",
+ fpath25: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/eml/eml_int_forloop_overflow_check.m",
+ fpath26: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/fixedpoint/isfi.m",
+ fpath27: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/intmax.m",
+ fpath28: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/intmin.m",
+ fpath29: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/scalexpAlloc.m",
+ fpath30: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/scalexpAllocNoCheck.m",
+ fpath31: "C:/Users/Ross Hartley/Documents/GitHub/Ross_Cassie_Controllers/submodules/CassieSimulink/MATLAB/Common/CassieParameters.p",
+ fpath32: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/ops/power.m",
+ fpath33: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/applyScalarFunction.m",
+ fpath34: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/useParforConst.m",
+ fpath35: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/diag.m",
+ fpath36: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/ismatrix.m",
+ fpath37: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/blkdiag.m",
+ fpath38: "C:/Program Files/MATLAB/R2016b/toolbox/eml/eml/+coder/+internal/indexPlus.m",
+ fpath39: "C:/Program Files/MATLAB/R2016b/toolbox/eml/lib/matlab/elmat/eye.m"
+};
+</script>
+</head>
+<body>
+
+<div class="west">
+<ul class="ui-tabs-nav">
+<li class="ui-tabs-nav-item ui-tabs-selected"><span class="tab-link" id="MATLABcode"><span>MATLAB code</span></span></li>
+<li class="ui-tabs-nav-item"><span class="tab-link" id="callstack"><span>Call stack</span></span></li>
+</ul>
+<div id="MATLABcodebody" class="ui-tabs-panel">
+<!-- Begin Filter -->
+<div class="grayline methodset" onclick="filterClick(event);">
+<a class="collapsed">Filter</a>
+</div>
+<div id="filterbody" class="hidden">
+<table class="myfunc-filter-tbl">
+<tr>
+<td title="Use this filter to display only functions and methods that contain variables or expressions with the specified attributes." colspan="2" class="checkbox">
+<div class="myfunc-filterby-chk"><input type="checkbox" class="filterenable" />
+<div class="filter-enable-lbl">Filter functions and methods</div></div></td></tr><tr>
+<td class="label"><div class="myfunc-filterby-lbl">Filter by:</div></td>
+<td class="select">
+<div class="filters">
+<select class="myfunc-filterby">
+<option id="size">Size</option>
+<option id="complex">Complexity</option>
+<option id="class">Class</option>
+</select>
+</div>
+</td>
+</tr>
+
+<tr>
+<td class="label"><div class="myfunc-filterstr-lbl">Filter:</div></td>
+<td class="input"><div>
+
+<div class="size">
+<select class="myfunc-filter size">
+<option value="2 156">0 x 0</option>
+<option value="2 156">1 x 1</option>
+<option value="2 156">1 x 2</option>
+<option value="2 156">1 x 20</option>
+<option value="2 156">1 x 6</option>
+<option value="2 156">1 x 8</option>
+<option value="2">1 x <b>:</b>?</option>
+<option value="2 156">14 x 1</option>
+<option value="2 156">14 x 14</option>
+<option value="2 156">2 x 1</option>
+<option value="2 156">21 x 21</option>
+<option value="2 156">3 x 1</option>
+<option value="2 156">3 x 1000</option>
+<option value="2 156">3 x 3</option>
+<option value="2 156">4 x 7</option>
+<option value="2 156">6 x 1</option>
+<option value="2 156">7 x 7</option>
+<option value="2"><b>:</b>? x <b>:</b>?</option>
+</select>
+</div>
+
+<div class="complex">
+<select class="myfunc-filter complex">
+<option value="">Complex values</option>
+<option value="2 156">Real values</option>
+</select>
+</div>
+<!-- Begin Class Filter -->
+<div class="class">
+<select class="myfunc-filter class">
+<option value="2 156">CassieParameters</option>
+<option value="2 156">RIEKF</option>
+<option value="2 156">cell</option>
+<option value="2 156">char</option>
+<option value="2 156">double</option>
+<option value="2 156">embedded.numerictype</option>
+<option value="2 156">int32</option>
+<option value="2 156">logical</option>
+<option value="2 156">uint32</option>
+</select>
+</div>
+<!-- End Class Filter -->
+
+
+<div class="wl">
+<table cellspacing="0" cellpadding="0">
+<tr>
+<td class="mode">
+<select class="wl-operator" name=":2 156;16:2 156">
+<option value="eq">=</option>
+<option value="ne">~=</option>
+<option value="lt">&lt;</option>
+<option value="le">&lt;=</option>
+<option value="ge">&gt;=</option>
+<option value="gt">&gt;</option>
+</select>
+</td>
+<td class="value"><select class="wl">
+<option value="2 156">16</option>
+</select>
+<input class="wl" />
+</td>
+</tr>
+</table>
+</div>
+</div>
+</td>
+</tr>
+</table>
+<div class="myfunc-count"></div>
+</div>
+<!-- End Filter -->
+<div class="grayline methodset" onmouseover="callTreeMouseOver(event);" onmouseout="callTreeMouseOut(event);" onclick="functionSetClick(event);">
+<a class="expanded">Functions</a>
+</div>
+<!-- Begin Function Tree -->
+<div id="functiontreebody">
+<div class="functionwrapper" onmouseover="callTreeMouseOver(event);" onmouseout="callTreeMouseOut(event);" onclick="functionTreeClick(event);">
+<ol class="tree">
+<!-- Begin Function Tree Roots -->
+<!-- End Function Tree Roots -->
+</ol>
+<!-- Function Tree Nodes -->
+<div class="functiontreenodes hidden">
+</div>
+<!-- End Function Tree Nodes -->
+</div>
+</div>
+<!-- End Function Tree -->
+<!-- Begin Class Tree -->
+<div class="grayline methodset" onmouseover="callTreeMouseOver(event);" onmouseout="callTreeMouseOut(event);" onclick="methodSetClick(event);">
+<a class="expanded">Classes</a>
+</div>
+<div id="classlistbody">
+<div class="classwrapper" onmouseover="callTreeMouseOver(event);" onmouseout="callTreeMouseOut(event);" onclick="classTreeClick(event);">
+<ol class="tree">
+<!-- Begin Class Tree Roots -->
+<li class="node collapsed passed"><a class="classroot" id="F157N2:M5" title="CassieParameters">CassieParameters</a></li>
+<li class="node collapsed failed"><a class="classroot" title="RIEKF">RIEKF</a>
+<ul>
+<li class="node collapsed passed"><a class="classroot" id="F5N3:M6" title="RIEKF">RIEKF.1</a></li>
+<li class="node collapsed passed"><a class="classroot" id="F156N4:M7" title="RIEKF">RIEKF.2</a></li>
+<li class="node collapsed failed"><a class="classroot" id="F2N5:M8" title="RIEKF">RIEKF.3</a></li>
+</ul>
+</li>
+<!-- End Class Tree Roots -->
+</ol>
+<!-- Class Tree Nodes -->
+<div class="classlistnodes hidden">
+<ol class="callstacknode" id="callstacknode2">
+<li class="node collapsed"><a>RIEKF.3</a>
+<ul>
+<li class="leaf failed"><a href="#" class="fcn " id="F2N5:m4" title="RIEKF.Update_StaticLandmarks">Update_StaticLandmarks</a></li>
+</ul>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode5">
+<li class="node collapsed"><a>RIEKF.1</a>
+<ul>
+<li class="leaf passed"><a href="#" class="fcn " id="F5N3:m2" title="RIEKF.RIEKF"><span class="default">RIEKF</span></a></li>
+</ul>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode156">
+<li class="node collapsed"><a>RIEKF.2</a>
+<ul>
+<li class="leaf passed"><a href="#" class="fcn " id="F156N4:m3" title="RIEKF.setupImpl">setupImpl</a></li>
+</ul>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode157">
+<li class="node collapsed"><a>CassieParameters</a>
+<ul>
+<li class="leaf passed"><a href="#" class="fcn " id="F157N2:m1" title="CassieParameters.CassieParameters_CassieParameters"><span class="default">CassieParameters_CassieParameters</span></a></li>
+</ul>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<!-- End Class Tree -->
+</div>
+<!-- Begin Call Tree -->
+<div id="callstackbody" class="ui-tabs-panel hidden">
+<div class="treewrapper" onmouseover="callTreeMouseOver(event);" onmouseout="callTreeMouseOut(event);" onclick="callTreeClick(event);">
+<ol class="tree">
+<!-- Call Tree Root -->
+<li class="leaf failed"><a href="#" class="fcn " id="F2N5:L1" title="RIEKF.Update_StaticLandmarks">Update_StaticLandmarks</a>
+</li>
+</ol>
+<!-- Call Tree Nodes -->
+<div class="callstacknodes hidden">
+<ol class="callstacknode" id="callstacknode2">
+
+<li class="leaf failed"><a href="#" class="fcn " id="F2N5:l1" title="RIEKF.Update_StaticLandmarks">Update_StaticLandmarks</a>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode5">
+
+<li class="leaf passed"><a href="#" class="fcn " id="F5N3:l2" title="RIEKF.RIEKF"><span class="default">RIEKF</span></a>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode156">
+
+<li class="node collapsed passed"><a href="#" class="fcn " id="F156N4:l3" title="RIEKF.setupImpl">setupImpl</a>
+<ul>
+<li class="leaf passed"><a href="#" class="fcn " id="F157N2:l4" title="CassieParameters.CassieParameters_CassieParameters"><span class="default">CassieParameters_CassieParameters</span></a></li>
+</ul>
+</li>
+</ol>
+<ol class="callstacknode" id="callstacknode157">
+
+<li class="leaf passed"><a href="#" class="fcn " id="F157N2:l5" title="CassieParameters.CassieParameters_CassieParameters"><span class="default">CassieParameters_CassieParameters</span></a>
+</li>
+</ol>
+
+</div>
+</div>
+</div>
+<!-- End Call Tree -->
+</div>
+<!-- Tooltips -->
+<div class="aux hidden">
+<div class="tooltips">
+<div class="tooltip" id="TT1"><table class="tooltip"><tr><th>Size</th><td><b>:</b>17 x <b>:</b>17</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT2"><table class="tooltip"><tr><th>Size</th><td>6 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT3"><table class="tooltip"><tr><th>Size</th><td><b>:</b>51 x <b>:</b>51</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT4"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT5"><table class="tooltip"><tr><th>Size</th><td>1 x <b>:</b>10</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT6"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>logical</td></tr></table></div>
+<div class="tooltip" id="TT7"><table class="tooltip"><tr><th>Size</th><td>3 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT8"><table class="tooltip"><tr><th>Size</th><td>14 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT9"><table class="tooltip"><tr><th>Size</th><td>4 x 7</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT10"><table class="tooltip"><tr><th>Size</th><td>2 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT11"><table class="tooltip"><tr><th>Size</th><td><b>:</b>4 x <b>:</b>10</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT12"><table class="tooltip"><tr><th>Size</th><td>7 x 7</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT13"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>RIEKF</td></tr></table></div>
+<div class="tooltip" id="TT14"><table class="tooltip"><tr><th>Size</th><td>1 x 20</td></tr><tr><th>Class</th><td>logical</td></tr></table></div>
+<div class="tooltip" id="TT15"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>int32</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT16"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT17"><table class="tooltip"><tr><th>Size</th><td>1 x 2</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT18"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT19"><table class="tooltip"><tr><th>Size</th><td>1 x 6</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT20"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT21"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>embedded.numerictype</td></tr><tr><th>Signedness</th><td>Signed</td></tr><tr><th>WL</th><td>16</td></tr><tr><th>FL</th><td>15</td></tr></table></div>
+<div class="tooltip" id="TT22"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT23"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT24"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>uint32</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT25"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>logical</td></tr></table></div>
+<div class="tooltip" id="TT26"><table class="tooltip"><tr><th>Size</th><td>3 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT27"><table class="tooltip"><tr><th>Size</th><td>14 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT28"><table class="tooltip"><tr><th>Size</th><td>6 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT29"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>CassieParameters</td></tr></table></div>
+<div class="tooltip" id="TT30"><table class="tooltip"><tr><th>Size</th><td>21 x 21</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT31"><table class="tooltip"><tr><th>Size</th><td>3 x 1000</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT32"><table class="tooltip"><tr><th>Size</th><td>2 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT33"><table class="tooltip"><tr><th>Size</th><td>0 x 0</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT34"><table class="tooltip"><tr><th>Size</th><td>3 x 3</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT35"><table class="tooltip"><tr><th>Size</th><td>14 x 14</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT36"><table class="tooltip"><tr><th>Size</th><td><b>:</b>? x <b>:</b>?</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT37"><table class="tooltip"><tr><th>Size</th><td>1 x 3</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT38"><table class="tooltip"><tr><th>Size</th><td><b>:</b>? x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT39"><table class="tooltip"><tr><th>Size</th><td>1 x <b>:</b>?</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT40"><table class="tooltip"><tr><th>Size</th><td>1 x 7</td></tr><tr><th>Class</th><td>logical</td></tr></table></div>
+<div class="tooltip" id="TT41"><table class="tooltip"><tr><th>Size</th><td>1 x 7</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT42"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT43"><table class="tooltip"><tr><th>Size</th><td>7 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT44"><table class="tooltip"><tr><th>Size</th><td>1 x 0</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT45"><table class="tooltip"><tr><th>Size</th><td>1 x 20</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT46"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>RIEKF</td></tr></table></div>
+<div class="tooltip" id="TT47"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT48"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT49"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT50"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT51"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT52"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>CassieParameters</td></tr></table></div>
+<div class="tooltip" id="TT53"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>RIEKF</td></tr></table></div>
+<div class="tooltip" id="TT54"><table class="tooltip"><tr><th>Size</th><td>1 x 19</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT55"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>mxArray</td></tr></table></div>
+<div class="tooltip" id="TT56"><table class="tooltip"><tr><th>Size</th><td>1 x 28</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT57"><table class="tooltip"><tr><th>Size</th><td>1 x 2</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT58"><table class="tooltip"><tr><th>Size</th><td>1 x 5</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT59"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>function_handle</td></tr></table></div>
+<div class="tooltip" id="TT60"><table class="tooltip"><tr><th>Size</th><td>1 x 3</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT61"><table class="tooltip"><tr><th>Size</th><td>1 x 3</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT62"><table class="tooltip"><tr><th>Size</th><td>1 x 23</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT63"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT64"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>function_handle</td></tr></table></div>
+<div class="tooltip" id="TT65"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>RIEKF</td></tr></table></div>
+<div class="tooltip" id="TT66"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT67"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT68"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT69"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT70"><table class="tooltip"><tr><th>Size</th><td>1 x 8</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT71"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>CassieParameters</td></tr></table></div>
+<div class="tooltip" id="TT72"><table class="tooltip"><tr><th>Size</th><td>1 x 14</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT73"><table class="tooltip"><tr><th>Size</th><td>1 x 1</td></tr><tr><th>Class</th><td>function_handle</td></tr></table></div>
+<div class="tooltip" id="TT74"><table class="tooltip"><tr><th>Size</th><td>3 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT75"><table class="tooltip"><tr><th>Size</th><td>2 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT76"><table class="tooltip"><tr><th>Size</th><td>1 x 31</td></tr><tr><th>Class</th><td>char</td></tr></table></div>
+<div class="tooltip" id="TT77"><table class="tooltip"><tr><th>Size</th><td>14 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT78"><table class="tooltip"><tr><th>Size</th><td>1 x 7</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT79"><table class="tooltip"><tr><th>Size</th><td>1 x 3</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="TT80"><table class="tooltip"><tr><th>Size</th><td>1 x 6</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT81"><table class="tooltip"><tr><th>Size</th><td>1 x 5</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT82"><table class="tooltip"><tr><th>Size</th><td>1 x 4</td></tr><tr><th>Class</th><td>cell</td></tr></table></div>
+<div class="tooltip" id="TT83"><table class="tooltip"><tr><th>Size</th><td>21 x 1</td></tr><tr><th>Class</th><td>double</td></tr><tr><th>Complex</th><td>No</td></tr></table></div>
+<div class="tooltip" id="V1"><table class="tooltip"><tr><th>Value</th><td>   1</br></td></tr></table></div>
+<div class="tooltip" id="V2"><table class="tooltip"><tr><th>Value</th><td>     0</br></td></tr></table></div>
+<div class="tooltip" id="V3"><table class="tooltip"><tr><th>Value</th><td>  Columns 1 through 2</br>    [1×2 double]    [1×2 double]</br>  Columns 3 through 4</br>    [1×2 double]    [1×2 double]</br>  Columns 5 through 6</br>    [1×2 double]    [1×2 double]</br>  Columns 7 through 8</br>    [1×2 double]    [1×2 double]</br></td></tr></table></div>
+<div class="tooltip" id="V4"><table class="tooltip"><tr><th>Value</th><td>  Columns 1 through 3</br>    'double'    'double'    'double'</br>  Columns 4 through 6</br>    'double'    'double'    'double'</br>  Columns 7 through 8</br>    'double'    'double'</br></td></tr></table></div>
+<div class="tooltip" id="V5"><table class="tooltip"><tr><th>Value</th><td>  Column 1</br>    [1×1 embedded.numerictype]</br>  Column 2</br>    [1×1 embedded.numerictype]</br>  Column 3</br>    [1×1 embedded.numerictype]</br>  Column 4</br>    [1×1 embedded.numerictype]</br>  Column 5</br>    [1×1 embedded.numerictype]</br>  Column 6</br>    [1×1 embedded.numerictype]</br>  Column 7</br>    [1×1 embedded.numerictype]</br>  Column 8</br>    [1×1 embedded.numerictype]</br></td></tr></table></div>
+<div class="tooltip" id="V6"><table class="tooltip"><tr><th>Value</th><td>  Columns 1 through 2</br>    [1×2 double]    [1×2 double]</br>  Columns 3 through 4</br>    [1×2 double]    [1×2 double]</br>  Columns 5 through 7</br>    [1×2 double]    [1×2 double]    [0]</br>  Column 8</br>    [1×2 double]</br></td></tr></table></div>
+<div class="tooltip" id="V7"><table class="tooltip"><tr><th>Value</th><td>   0   0   0   0   0   0   0   0</br></td></tr></table></div>
+<div class="tooltip" id="V8"><table class="tooltip"><tr><th>Value</th><td>   0</br></td></tr></table></div>
+<div class="tooltip" id="V9"><table class="tooltip"><tr><th>Value</th><td></br>          DataTypeMode: Fixed-point: binary point scaling</br>            Signedness: Signed</br>            WordLength: 16</br>        FractionLength: 15</br></td></tr></table></div>
+</div>
+</div>
+<!-- End Tooltips -->
+
+<div class="south">
+<ul class="ui-tabs-nav">
+<li class="ui-tabs-nav-item ui-tabs-selected"><span class="tab-link" id="summary"><span>Summary</span></span></li>
+<li class="ui-tabs-nav-item"><span class="tab-link" id="messages"><span>All Messages (1)</span></span></li>
+<li class="ui-tabs-nav-item"><span class="tab-link" id="watchlist"><span>Variables</span></span></li>
+<li class="ui-tabs-nav-item hidden"><span class="tab-link" id="watchload"><span>Variables</span></span></li>
+</ul>
+
+<!-- Compilation Summary -->
+<div id="summarybody" class="ui-tabs-panel">
+<table cellpadding="1" cellspacing="4">
+<tr><td>C source code generated on:</td><td>28-Mar-2018 09:24:49</td></tr>
+<tr><td>Number of errors:</td><td><a href="javascript:selectMessagesTab();">1</a></td></tr>
+<tr><td>Number of warnings:</td><td><a href="javascript:selectMessagesTab();">0</a></td></tr>
+<tr><td>Number of notices:</td><td><a href="javascript:selectMessagesTab();">0</a></td></tr>
+</table>
+<p/><p/><table>
+<tr><td><b>Tell Us What You Think</b></td></tr>
+<tr><td>We value your feedback. Please take a few minutes to answer this short questionnaire regarding the Code Generation Report.</td></tr>
+<tr><td><a href="matlab: emlcprivate('launchReportSurvey');">&gt;&gt;Provide Feedback</a></td></tr>
+</table>
+</div>
+
+<!-- Message Table -->
+<div id="messagesbody" class="ui-tabs-panel hidden">
+<table class="grid" summary="This table lists the messages produced during code generation." cellspacing="0" cellpadding="6">
+<thead>
+<tr>
+<th id="msgorder" scope="col"><div class="d1"><div class="d2"><a href="#">Order</a></div></div></th>
+<th id="msgtype" scope="col"><div class="d1"><div class="d2"><a href="#">Type</a></div></div></th>
+<th id="function" scope="col"><div class="d1"><div class="d2"><a href="#">Function</a></div></div></th>
+<th id="location" scope="col"><div class="d1"><div class="d2"><a href="#">Line</a></div></div></th>
+<th id="text" scope="col"><div class="d1"><div class="d2"><a href="#">Description</a></div></div></th>
+</tr>
+</thead>
+<tbody onmouseover="messagesMouseOver(event);" onmouseout="messagesMouseOut(event);" onclick="messagesClick(event);">
+<tr class="message error" id="M1F2">
+<td class="msgorder" headers="msgorder"><a href="#">1</a></td>
+<td class="failed" headers="msgtype"></td>
+<td class="function" headers="function"><div>Update_StaticLandmarks</div></td>
+<td class="location" headers="location"><div>522</div></td>
+<td class="text" headers="text"><div>Size mismatch (size [0 x 0] ~= size [:? x 1]).<br/>The size to the left is the size of the left-hand side of the assignment.</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Watchlist Table -->
+<div id="watchlistbody" class="ui-tabs-panel hidden">
+</div>
+<div id="watchloadbody" class="ui-tabs-panel hidden">
+Loading Variables table ...
+</div>
+
+</div>
+<!-- Begin MATLAB Code Panel -->
+<div class="center">
+<div class="center-title">
+<div class="ui-tabs-nav-item ui-tabs-selected">
+<span class="functiontitle">
+</span>
+<!-- Begin Call Sites -->
+<span id="callsiteselecttable" class="call-sites-tbl">
+<span id="callsiteselectlabel" class="filtered">Calls:</span>
+<select id="callsiteselect" onchange="callSiteChange(event)">
+<option value="callsiteprompt">Select a function call:</option>
+</select>
+</span>
+<!-- End Call Sites -->
+</div>
+</div>
+<div class="ui-tabs-panel">
+<div class="code" onmouseover="mcodeMouseOver(event);" onmouseout="mcodeMouseOut(event);"onclick="mcodeClick(event);">
+</div>
+</div>
+</div>
+<!-- End MATLAB Code Panel -->
+</body>
+</html>

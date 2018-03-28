@@ -11,6 +11,8 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         ekf_update_enabled = true;
         % Enable Bias Estimation
         enable_bias_estimation = true;
+        % Enable Static Landmarks
+        enable_static_landmarks = false;
         % Gyroscope Noise std
         gyro_noise_std = 0.1*ones(3,1);
         % Gyroscope Bias Noise std
@@ -41,6 +43,8 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         prior_accel_bias_std = 0.1*ones(3,1);
         % Prior Forward Kinematics std
         prior_forward_kinematics_std = 0.1*ones(3,1);
+        % Static Landmark Positions
+        landmark_positions = [0;0;0];
     end
     
     % PROTECTED PROPERTIES 
@@ -65,6 +69,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         encoders_prev;
         contact_prev;
         t_prev;
+        landmark_ids;
         
         % Sensor Covariances
         Qg;    % Gyro Covariance Matrix
@@ -84,12 +89,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         % EKF Noise Parameters
         g = [0;0;-9.81]; % Gravity
         imu_init_total_count = 1000;
-        
-        % Static Landmark positions
-        landmark_positions = [[0;0;0],... % {W}_p_{WL}
-                              [1;2;3],...
-                              [-5;1.5;-2.1]];
-                          
     end
     
     %% PROTECTED METHODS =====================================================
@@ -135,10 +134,13 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             obj.encoders_prev = zeros(14,1);
             obj.contact_prev = zeros(2,1);
             obj.t_prev = 0;
+            
+            % Landmark 
+            obj.landmark_ids = [];
                         
         end % setupImpl
         
-        function [X, theta, P, enabled] = stepImpl(obj, enable, t, w, a, encoders, contact, landmarks, X_init)
+        function [X, theta, P, enabled, landmark_ids] = stepImpl(obj, enable, t, w, a, encoders, contact, landmarks, X_init)
             % Function that creates a state vector from sensor readings.
             %
             %   Inputs:
@@ -177,14 +179,18 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 % Predict state using IMU and contact measurements     
                 obj.Predict_State(obj.w_prev, obj.a_prev, obj.encoders_prev, obj.contact_prev, t - obj.t_prev);
 
+                % Update using other measurements
                 if obj.ekf_update_enabled
                     % Update state using forward kinematic measurements
                     obj.Update_ForwardKinematics(encoders, contact);
-                    % Update state using static landmark measurements
+                    % Update state using landmark position measurements
                     if ~isempty(landmarks)
-                        obj.Update_StaticLandmarks(landmarks);
+                        if obj.enable_static_landmarks
+                            obj.Update_StaticLandmarks(landmarks);
+                        else
+                            obj.Update_Landmarks(landmarks);
+                        end
                     end
-                    
                 end
             
             end
@@ -199,10 +205,10 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             % Output
             X = obj.X;
             theta = obj.theta;
-            P = obj.P;
+            P = obj.P(1:21,1:21);
             enabled = double(obj.filter_enabled);
-   
-            
+            landmark_ids = obj.landmark_ids;
+             
         end % stepImpl
 
         % Define Outputs =====================================================
@@ -210,36 +216,40 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             %RESETIMPL Reset System object states.
         end % resetImpl
         
-        function [X, theta, P, enabled] = getOutputSizeImpl(~)
+        function [X, theta, P, enabled, landmark_ids] = getOutputSizeImpl(~)
             %GETOUTPUTSIZEIMPL Get sizes of output ports.
-            X = [7, 7];
+            X = [7+10, 7+10];
             theta = [6,1];
-            P = [21,21];
+            P = [21 + 3*10, 21 + 3*10];
             enabled = [1,1];
+            landmark_ids = [1, 10];
         end % getOutputSizeImpl
         
-        function [X, theta, P, enabled] = getOutputDataTypeImpl(~)
+        function [X, theta, P, enabled, landmark_ids] = getOutputDataTypeImpl(~)
             %GETOUTPUTDATATYPEIMPL Get data types of output ports.
             X = 'double';
             theta = 'double';
             P = 'double';
             enabled = 'double';
+            landmark_ids = 'double';
         end % getOutputDataTypeImpl
         
-        function [X, theta, P, enabled] = isOutputComplexImpl(~)
+        function [X, theta, P, enabled, landmark_ids] = isOutputComplexImpl(~)
             %ISOUTPUTCOMPLEXIMPL Complexity of output ports.
             X = false;
             theta = false;
             P = false;
             enabled = false;
+            landmark_ids = false;
         end % isOutputComplexImpl
         
-        function [X, theta, P, enabled] = isOutputFixedSizeImpl(~)
+        function [X, theta, P, enabled, landmark_ids] = isOutputFixedSizeImpl(~)
             %ISOUTPUTFIXEDSIZEIMPL Fixed-size or variale-size output ports.
-            X = true;
+            X = false;
             theta = true;
-            P = true;
+            P = false;
             enabled = true;
+            landmark_ids = false;
         end % isOutputFixedSizeImpl
         
     end
@@ -247,20 +257,35 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     %% PRIVATE METHODS =====================================================
     methods (Access = private)
         
-        function [R, v, p, dR, dL, bg, ba] = Separate_State(~, X, theta)
+        function [R, v, p, dR, dL, lm, bg, ba] = Separate_State(~, X, theta)
             % Separate state vector into components
             R = X(1:3,1:3);  % Orientation
             v = X(1:3,4);    % Base Velocity
             p = X(1:3,5);    % Base Position
             dR = X(1:3,6);   % Right Foot Position
             dL = X(1:3,7);   % Left Foot Position
+            
+            % Landmark Positions (if they exist)
+            if size(X,2) > 7
+                lm = X(1:3,8:end);
+            else
+                lm = [];
+            end
+            
+            % Parameters
             bg = theta(1:3); % Gyroscope Bias
             ba = theta(4:6); % Accelerometer Bias
         end
         
-        function [X, theta] = Construct_State(~, R, v, p, dR, dL, bg, ba)
+        function [X, theta] = Construct_State(~, R, v, p, dR, dL, lm, bg, ba)
             % Construct matrix from separate states
-            X = [R, v, p, dR, dL; 0,0,0,1,0,0,0; 0,0,0,0,1,0,0; 0,0,0,0,0,1,0; 0,0,0,0,0,0,1];
+            X = eye(7 + size(lm,2));
+            X(1:7,1:7) = [R, v, p, dR, dL; 0,0,0,1,0,0,0; 0,0,0,0,1,0,0; 0,0,0,0,0,1,0; 0,0,0,0,0,0,1];
+            % Add Landmarks
+            if ~isempty(lm)
+                X(1:3,8:end) = lm;
+            end
+            % Parameters
             theta = [bg; ba];
         end
         
@@ -272,18 +297,23 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         end
         
         function [dX, dtheta] = exp(obj, v)
-            % Exponential map of SE_3(3)
-        	dX = expm([obj.skew(v(1:3)), v(4:6), v(7:9), v(10:12), v(13:15); zeros(4,7)]);
-            dtheta = v(16:21);
+            % Exponential map of SE_N(3)
+            N = (length(v)-3)/3;
+            Lg = zeros(N+3);
+            Lg(1:3,:) = [obj.skew(v(1:3)), reshape(v(4:end),3,[])];
+        	dX = expm(Lg);
+            dtheta = v(end-5:end);
         end
         
         function AdjX = Adjoint(obj, X)
-            % Adjoint of SE_3(3)
-            AdjX = [X(1:3,1:3), zeros(3), zeros(3), zeros(3), zeros(3);
-                    obj.skew(X(1:3,4))*X(1:3,1:3), X(1:3,1:3), zeros(3), zeros(3), zeros(3);
-                    obj.skew(X(1:3,5))*X(1:3,1:3), zeros(3), X(1:3,1:3), zeros(3), zeros(3);
-                    obj.skew(X(1:3,6))*X(1:3,1:3), zeros(3), zeros(3), X(1:3,1:3), zeros(3);
-                    obj.skew(X(1:3,7))*X(1:3,1:3), zeros(3), zeros(3), zeros(3), X(1:3,1:3)];
+            % Adjoint of SE_N(3)         
+            N = size(X,2)-3;
+            R = X(1:3,1:3);
+            R_cell = repmat({R}, 1, N+1); 
+            AdjX = blkdiag(R_cell{:});
+            for i = 1:N
+                AdjX(3*i+1:3*i+3,1:3) = obj.skew(X(1:3,i+3))*R;
+            end
         end
         
         function [] = InitializeBias(obj, w, a, X_init)
@@ -331,7 +361,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         
         function [] = Predict_State(obj, w, a, encoders, contact, dt)
             % Right-Invariant Extended Kalman Filter Prediction Step
-           [R, v, p, dR, dL, bg, ba] = obj.Separate_State(obj.X, obj.theta);
+           [R, v, p, dR, dL, lm, bg, ba] = obj.Separate_State(obj.X, obj.theta);
             
             % Bias corrected IMU information
             w_k = w - bg;    % {I}_w_{WI}
@@ -348,29 +378,43 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             dR_pred = contact(2)*dR + (1-contact(2))*dR_off;
             dL_pred = contact(1)*dL + (1-contact(1))*dL_off;
             
+            % Landmark Dynamics
+            lm_pred = lm;
+            
             % Bias Dynamics
             bg_pred = bg; 
             ba_pred = ba;
+                        
             
-            % Linearized invariant error dynamics
-            Fc = [       zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),              -R, zeros(3);
-                  obj.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3),  -obj.skew(v)*R,       -R;
-                         zeros(3),   eye(3), zeros(3), zeros(3), zeros(3),  -obj.skew(p)*R, zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -obj.skew(dR)*R, zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -obj.skew(dL)*R, zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3)];
-
-            Fk = eye(21) + Fc*dt; % Discretized 
+            % -- Linearized invariant error dynamics --
+            
+            % Base
+            Fc = [       zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
+                  obj.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3);
+                         zeros(3),   eye(3), zeros(3), zeros(3), zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
+                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3)];
+           % Landmarks          
+           Fc = blkdiag(Fc, zeros(3*length(obj.landmark_ids)));     
+           % Parameters
+           Fc = blkdiag(Fc, zeros(6));               
+           Fc(1:15,end-5:end) = [             -R, zeros(3);
+                                  -obj.skew(v)*R,       -R;
+                                  -obj.skew(p)*R, zeros(3);
+                                 -obj.skew(dR)*R, zeros(3);
+                                 -obj.skew(dL)*R, zeros(3)];
+           
+            % Discretize
+            Fk = eye(size(Fc)) + Fc*dt; 
                         
             Lc = blkdiag(obj.Adjoint(obj.X), eye(6));
             hR_R = R_VectorNav_to_RightToeBottom(encoders);
             hR_L = R_VectorNav_to_LeftToeBottom(encoders);
-            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
+            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', zeros(3*length(obj.landmark_ids)), obj.Qbg, obj.Qba);             
             Qk = Fk*Lc*Q*Lc'*Fk'*dt; % Discretized
             
             % Construct predicted state
-            [obj.X, obj.theta] = obj.Construct_State(R_pred, v_pred, p_pred, dR_pred, dL_pred, bg_pred, ba_pred);
+            [obj.X, obj.theta] = obj.Construct_State(R_pred, v_pred, p_pred, dR_pred, dL_pred, lm_pred, bg_pred, ba_pred);
             
             % Predict Covariance
             obj.P = Fk * obj.P * Fk' + Qk;
@@ -383,16 +427,19 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             K = (obj.P * H')/S;
             
             % Copy X along the diagonals if more than one measurement
-            X_cell = repmat({obj.X}, 1, length(Y)/7);
+            X_cell = repmat({obj.X}, 1, length(Y)/size(obj.X,1));
             Z = blkdiag(X_cell{:}) * Y - b;
             
             % Update State
-            [dX, dtheta] = obj.exp(K*PI*Z);
+            delta = K*PI*Z;
+            dX = obj.exp(delta(1:end-6));
+            dtheta = delta(end-5:end);
             obj.X = dX * obj.X;
             obj.theta = obj.theta + dtheta;
             
             % Update Covariance
-            obj.P = (eye(21) - K*H)* obj.P *(eye(21) - K*H)' + K*N*K'; % Joseph update form
+            I = eye(size(obj.P));
+            obj.P = (I - K*H)* obj.P *(I - K*H)' + K*N*K'; % Joseph update form
             
         end
         
@@ -401,6 +448,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             % kinematic measurements
             
             R_pred = obj.X(1:3,1:3);
+            M = length(obj.landmark_ids);
             
             if contact(2) == 1 && contact(1) == 1 
                 % Double Support
@@ -410,15 +458,15 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 JL = J_VectorNav_to_LeftToeBottom(encoders);
                 
                 % Measurement Model
-                Y = [s_pR; 0; 1; -1; 0; 
-                     s_pL; 0; 1; 0; -1];
-                b = zeros(14,1);
-                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3);
-                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
+                Y = [s_pR; 0; 1; -1; 0; zeros(M,1); 
+                     s_pL; 0; 1; 0; -1; zeros(M,1)];
+                b = zeros(size(Y));
+                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6);
+                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];
                 N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
                             R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);  
-                PI = [eye(3), zeros(3,4), zeros(3,7);
-                     zeros(3,7), eye(3), zeros(3,4)];
+                PI = [eye(3), zeros(3,4), zeros(3,M), zeros(3,7), zeros(3,M);
+                     zeros(3,7), zeros(3,M), eye(3), zeros(3,4), zeros(3,M)];
 
                 % Update State
                 obj.Update_State(Y, b, H, N, PI);
@@ -429,11 +477,11 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 JR = J_VectorNav_to_RightToeBottom(encoders);
                 
                 % Measurement Model
-                Y = [s_pR; 0; 1; -1; 0];
-                b = zeros(7,1);
-                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3), zeros(3)];
+                Y = [s_pR; 0; 1; -1; 0; zeros(M,1)];
+                b = zeros(size(Y));
+                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6)];
                 N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
-                PI = [eye(3), zeros(3,4)];
+                PI = [eye(3), zeros(3,4), zeros(3,M)];
 
                 % Update State
                 obj.Update_State(Y, b, H, N, PI);
@@ -444,11 +492,11 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 JL = J_VectorNav_to_LeftToeBottom(encoders);
 
                 % Measurement Model
-                Y = [s_pL; 0; 1; 0; -1];
-                b = zeros(7,1);
-                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3), zeros(3)];
+                Y = [s_pL; 0; 1; 0; -1; zeros(M,1)];
+                b = zeros(size(Y));
+                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];
                 N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
-                PI = [eye(3), zeros(3,4)];
+                PI = [eye(3), zeros(3,4), zeros(3,M)];
 
                 % Update State
                 obj.Update_State(Y, b, H, N, PI);
@@ -464,17 +512,85 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             R_pred = obj.X(1:3,1:3);
             
             % Stack landmark measurements
-            Y = []; b = []; H = []; N = []; PI = [];
+            Y = []; b = []; H = []; N = []; PI = []; 
             for i = 1:size(landmarks,2)
-                Y = vertcat(Y, [landmarks(2:4,i); 0; 1; 0; 0]);
-                b = vertcat(b, [obj.landmark_positions(:,landmarks(1,i)); 0; 1; 0; 0]);
-                H = vertcat(H, [obj.skew(obj.landmark_positions(:,landmarks(1,i))), zeros(3), -eye(3), zeros(3), zeros(3), zeros(3), zeros(3)]);
-                N = blkdiag(N, R_pred * obj.Ql * R_pred');
-                PI = blkdiag(PI, [eye(3), zeros(3,4)]);
+                % Search to see if measured landmark id is in the list of
+                % static landmarks
+                id = find(obj.landmark_positions(1,:) == landmarks(1,i));
+                if ~isempty(id)
+                    % Create measurement model
+                    Y = vertcat(Y, [landmarks(2:end,i); 0; 1; 0; 0]);
+                    b = vertcat(b, [obj.landmark_positions(2:end,id); 0; 1; 0; 0]);
+                    H = vertcat(H, [obj.skew(obj.landmark_positions(2:end,id)), zeros(3), -eye(3), zeros(3), zeros(3), zeros(3), zeros(3)]);
+                    N = blkdiag(N, R_pred * obj.Ql * R_pred');
+                    PI = blkdiag(PI, [eye(3), zeros(3,4)]);
+                end
             end
                  
             % Update State
-            obj.Update_State(Y, b, H, N, PI);
+            if ~isempty(Y)
+                obj.Update_State(Y, b, H, N, PI);
+            end
+        end
+        
+        function [] = Update_Landmarks(obj, landmarks)
+            % Function to perform Right-Invariant EKF update from estimated
+            % landmark distance measurements            
+            
+            R_pred = obj.X(1:3,1:3);
+                        
+            % Stack landmark measurements
+            Y = []; H = []; N = []; PI = []; new_landmarks = [];
+            for i = 1:size(landmarks,2)
+                % Search to see if measured landmark id is in the list of
+                % static landmarks
+                id = find(obj.landmark_ids == landmarks(1,i));
+                if isempty(id)
+                    new_landmarks = horzcat(new_landmarks, landmarks(:,i));
+                else
+                    % Create measurement model
+                    Y1 = [landmarks(2:end,i); 0; 1; 0; 0];
+                    Y2 = zeros(length(obj.landmark_ids),1);
+                    Y2(id) = -1;
+                    Y = vertcat(Y, [Y1; Y2]);
+                    
+                    H1 = [zeros(3), zeros(3), -eye(3), zeros(3), zeros(3)];
+                    H2 = zeros(3,3*length(obj.landmark_ids));
+                    H2(:,3*(id-1)+1:3*(id-1)+3) = eye(3);
+                    H3 = zeros(3,6);
+                    H = vertcat(H, [H1, H2, H3]);
+                    
+                    N = blkdiag(N, R_pred * obj.Ql * R_pred');
+                    PI = blkdiag(PI, [eye(3), zeros(3,4), zeros(3,length(obj.landmark_ids))]);
+                end
+            end
+                 
+            % Update State
+            if ~isempty(Y)
+                b = zeros(size(Y));
+                obj.Update_State(Y, b, H, N, PI);
+            end
+            
+            % Augment State for new landmarks
+            if ~isempty(new_landmarks)
+                [R, ~, p, ~, ~, ~, ~, ~] = obj.Separate_State(obj.X, obj.theta);
+                for i = 1:size(new_landmarks,2)
+                    % Initialize new landmark mean
+                    obj.landmark_ids = horzcat(obj.landmark_ids, new_landmarks(1,i));
+                    obj.X = blkdiag(obj.X, 1);
+                    % {W}_p_{WL} = {W}_p_{WB} + R_{WB}*{B}_p_{BL}
+                    obj.X(1:3,end) = p + R*new_landmarks(2:end,i);
+                    
+                    % Initialize new landmark covariance
+                    F = eye(size(obj.P,1) - 6); % Start with I with state dim
+                    F = vertcat(F, [zeros(3,6), eye(3), zeros(3,3*(size(obj.X,2)-6))]); % Add row to increase dimension
+                    F = blkdiag(F, eye(6)); % Add block I for parameters
+                    G = zeros(size(F,1),3);
+                    G(end-8:end-6,:) = R_pred * obj.Ql;
+                    obj.P = F*obj.P*F' + G*obj.Ql*G';
+                end
+            end
+            
         end
         
     end % methods
