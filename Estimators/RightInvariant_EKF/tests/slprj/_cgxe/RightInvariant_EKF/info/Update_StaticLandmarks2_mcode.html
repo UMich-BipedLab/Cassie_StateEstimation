@@ -191,7 +191,7 @@
 <span class="srcline"><span class="lineno"><a href="2,188" id="srcline188">188</a></span><span class="line">                        <span class="keyword">if</span> obj.enable_static_landmarks</span></span>
 <span class="srcline"><span class="lineno"><a href="2,189" id="srcline189">189</a></span><span class="line">                            obj.Update_StaticLandmarks(landmarks);</span></span>
 <span class="srcline"><span class="lineno"><a href="2,190" id="srcline190">190</a></span><span class="line">                        <span class="keyword">else</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,191" id="srcline191">191</a></span><span class="line">                            obj.Update_Landmarks(landmarks);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,191" id="srcline191">191</a></span><span class="line">                            <span class="comment">%obj.Update_Landmarks(landmarks);</span></span></span>
 <span class="srcline"><span class="lineno"><a href="2,192" id="srcline192">192</a></span><span class="line">                        <span class="keyword">end</span></span></span>
 <span class="srcline"><span class="lineno"><a href="2,193" id="srcline193">193</a></span><span class="line">                    <span class="keyword">end</span></span></span>
 <span class="srcline"><span class="lineno"><a href="2,194" id="srcline194">194</a></span><span class="line">                <span class="keyword">end</span></span></span>
@@ -210,8 +210,8 @@
 <span class="srcline"><span class="lineno"><a href="2,207" id="srcline207">207</a></span><span class="line">            theta = obj.theta;</span></span>
 <span class="srcline"><span class="lineno"><a href="2,208" id="srcline208">208</a></span><span class="line">            P = obj.P(1:21,1:21);</span></span>
 <span class="srcline"><span class="lineno"><a href="2,209" id="srcline209">209</a></span><span class="line">            enabled = double(obj.filter_enabled);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,210" id="srcline210">210</a></span><span class="line">            landmark_ids = obj.landmark_ids;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,211" id="srcline211">211</a></span><span class="line">             </span></span>
+<span class="srcline"><span class="lineno"><a href="2,210" id="srcline210">210</a></span><span class="line"><span class="comment">%             landmark_ids = obj.landmark_ids;</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,211" id="srcline211">211</a></span><span class="line">            landmark_ids = 0;</span></span>
 <span class="srcline"><span class="lineno"><a href="2,212" id="srcline212">212</a></span><span class="line">        <span class="keyword">end</span> <span class="comment">% stepImpl</span></span></span>
 <span class="srcline"><span class="lineno"><a href="2,213" id="srcline213">213</a></span><span class="line"></span></span>
 <span class="srcline"><span class="lineno"><a href="2,214" id="srcline214">214</a></span><span class="line">        <span class="comment">% Define Outputs =====================================================</span></span></span>
@@ -430,180 +430,202 @@
 <span class="srcline"><span class="lineno"><a href="2,427" id="srcline427">427</a></span><span class="line">            K = (obj.P * H')/S;</span></span>
 <span class="srcline"><span class="lineno"><a href="2,428" id="srcline428">428</a></span><span class="line">            </span></span>
 <span class="srcline"><span class="lineno"><a href="2,429" id="srcline429">429</a></span><span class="line">            <span class="comment">% Copy X along the diagonals if more than one measurement</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,430" id="srcline430">430</a></span><span class="line">            X_cell = repmat({obj.X}, 1, length(Y)/size(obj.X,1));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,431" id="srcline431">431</a></span><span class="line">            Z = blkdiag(X_cell{:}) * Y - b;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,432" id="srcline432">432</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,433" id="srcline433">433</a></span><span class="line">            <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,434" id="srcline434">434</a></span><span class="line">            delta = K*PI*Z;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,435" id="srcline435">435</a></span><span class="line">            dX = obj.exp(delta(1:end-6));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,436" id="srcline436">436</a></span><span class="line">            dtheta = delta(end-5:end);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,437" id="srcline437">437</a></span><span class="line">            obj.X = dX * obj.X;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,438" id="srcline438">438</a></span><span class="line">            obj.theta = obj.theta + dtheta;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,439" id="srcline439">439</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,440" id="srcline440">440</a></span><span class="line">            <span class="comment">% Update Covariance</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,441" id="srcline441">441</a></span><span class="line">            I = eye(size(obj.P));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,442" id="srcline442">442</a></span><span class="line">            obj.P = (I - K*H)* obj.P *(I - K*H)' + K*N*K'; <span class="comment">% Joseph update form</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,443" id="srcline443">443</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,444" id="srcline444">444</a></span><span class="line">        <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,445" id="srcline445">445</a></span><span class="line">        </span></span>
-<span class="srcline"><span class="lineno"><a href="2,446" id="srcline446">446</a></span><span class="line">        <span class="keyword">function</span> [] = Update_ForwardKinematics(obj, encoders, contact)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,447" id="srcline447">447</a></span><span class="line">            <span class="comment">% Function to perform Right-Invariant EKF update from forward</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,448" id="srcline448">448</a></span><span class="line">            <span class="comment">% kinematic measurements</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,449" id="srcline449">449</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,450" id="srcline450">450</a></span><span class="line">            R_pred = obj.X(1:3,1:3);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,451" id="srcline451">451</a></span><span class="line">            M = length(obj.landmark_ids);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,452" id="srcline452">452</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,453" id="srcline453">453</a></span><span class="line">            <span class="keyword">if</span> contact(2) == 1 &amp;&amp; contact(1) == 1 </span></span>
-<span class="srcline"><span class="lineno"><a href="2,454" id="srcline454">454</a></span><span class="line">                <span class="comment">% Double Support</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,455" id="srcline455">455</a></span><span class="line">                s_pR = p_VectorNav_to_RightToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,456" id="srcline456">456</a></span><span class="line">                s_pL = p_VectorNav_to_LeftToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,457" id="srcline457">457</a></span><span class="line">                JR = J_VectorNav_to_RightToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,458" id="srcline458">458</a></span><span class="line">                JL = J_VectorNav_to_LeftToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,459" id="srcline459">459</a></span><span class="line">                </span></span>
-<span class="srcline"><span class="lineno"><a href="2,460" id="srcline460">460</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,461" id="srcline461">461</a></span><span class="line">                Y = [s_pR; 0; 1; -1; 0; zeros(M,1); </span></span>
-<span class="srcline"><span class="lineno"><a href="2,462" id="srcline462">462</a></span><span class="line">                     s_pL; 0; 1; 0; -1; zeros(M,1)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,463" id="srcline463">463</a></span><span class="line">                b = zeros(size(Y));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,464" id="srcline464">464</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,465" id="srcline465">465</a></span><span class="line">                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,466" id="srcline466">466</a></span><span class="line">                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, <span class="keyword">...</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,467" id="srcline467">467</a></span><span class="line">                            R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);  </span></span>
-<span class="srcline"><span class="lineno"><a href="2,468" id="srcline468">468</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M), zeros(3,7), zeros(3,M);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,469" id="srcline469">469</a></span><span class="line">                     zeros(3,7), zeros(3,M), eye(3), zeros(3,4), zeros(3,M)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,470" id="srcline470">470</a></span><span class="line"></span></span>
-<span class="srcline"><span class="lineno"><a href="2,471" id="srcline471">471</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,472" id="srcline472">472</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,473" id="srcline473">473</a></span><span class="line">                        </span></span>
-<span class="srcline"><span class="lineno"><a href="2,474" id="srcline474">474</a></span><span class="line">            <span class="keyword">elseif</span> contact(2) == 1 </span></span>
-<span class="srcline"><span class="lineno"><a href="2,475" id="srcline475">475</a></span><span class="line">                <span class="comment">% Single Support Right    </span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,476" id="srcline476">476</a></span><span class="line">                s_pR = p_VectorNav_to_RightToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,477" id="srcline477">477</a></span><span class="line">                JR = J_VectorNav_to_RightToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,478" id="srcline478">478</a></span><span class="line">                </span></span>
-<span class="srcline"><span class="lineno"><a href="2,479" id="srcline479">479</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,480" id="srcline480">480</a></span><span class="line">                Y = [s_pR; 0; 1; -1; 0; zeros(M,1)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,481" id="srcline481">481</a></span><span class="line">                b = zeros(size(Y));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,482" id="srcline482">482</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,483" id="srcline483">483</a></span><span class="line">                N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,484" id="srcline484">484</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,485" id="srcline485">485</a></span><span class="line"></span></span>
-<span class="srcline"><span class="lineno"><a href="2,486" id="srcline486">486</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,487" id="srcline487">487</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,488" id="srcline488">488</a></span><span class="line">                </span></span>
-<span class="srcline"><span class="lineno"><a href="2,489" id="srcline489">489</a></span><span class="line">            <span class="keyword">elseif</span> contact(1) == 1 </span></span>
-<span class="srcline"><span class="lineno"><a href="2,490" id="srcline490">490</a></span><span class="line">                <span class="comment">% Single Support Left</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,491" id="srcline491">491</a></span><span class="line">                s_pL = p_VectorNav_to_LeftToeBottom(encoders);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,492" id="srcline492">492</a></span><span class="line">                JL = J_VectorNav_to_LeftToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,430" id="srcline430">430</a></span><span class="line">            <span class="comment">% TODO: find better way to do this</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,431" id="srcline431">431</a></span><span class="line">            N = size(obj.X,1);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,432" id="srcline432">432</a></span><span class="line">            M = length(Y)/N;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,433" id="srcline433">433</a></span><span class="line">            BigX = zeros(N*M, N*M);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,434" id="srcline434">434</a></span><span class="line">            <span class="keyword">for</span> i = 1:M</span></span>
+<span class="srcline"><span class="lineno"><a href="2,435" id="srcline435">435</a></span><span class="line">                BigX(7*(i-1)+1:7*(i-1)+7, 7*(i-1)+1:7*(i-1)+7) = obj.X;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,436" id="srcline436">436</a></span><span class="line">            <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,437" id="srcline437">437</a></span><span class="line">            Z = BigX * Y - b;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,438" id="srcline438">438</a></span><span class="line"><span class="comment">%             X_cell = repmat({obj.X}, 1, length(Y)/size(obj.X,1));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,439" id="srcline439">439</a></span><span class="line"><span class="comment">%             Z = blkdiag(X_cell{:}) * Y - b;</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,440" id="srcline440">440</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,441" id="srcline441">441</a></span><span class="line">            <span class="comment">% Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,442" id="srcline442">442</a></span><span class="line">            delta = K*PI*Z;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,443" id="srcline443">443</a></span><span class="line">            dX = obj.exp(delta(1:end-6));</span></span>
+<span class="srcline"><span class="lineno"><a href="2,444" id="srcline444">444</a></span><span class="line">            dtheta = delta(end-5:end);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,445" id="srcline445">445</a></span><span class="line">            obj.X = dX * obj.X;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,446" id="srcline446">446</a></span><span class="line">            obj.theta = obj.theta + dtheta;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,447" id="srcline447">447</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,448" id="srcline448">448</a></span><span class="line">            <span class="comment">% Update Covariance</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,449" id="srcline449">449</a></span><span class="line">            I = eye(size(obj.P));</span></span>
+<span class="srcline"><span class="lineno"><a href="2,450" id="srcline450">450</a></span><span class="line">            obj.P = (I - K*H)* obj.P *(I - K*H)' + K*N*K'; <span class="comment">% Joseph update form</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,451" id="srcline451">451</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,452" id="srcline452">452</a></span><span class="line">        <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,453" id="srcline453">453</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="2,454" id="srcline454">454</a></span><span class="line">        <span class="keyword">function</span> [] = Update_ForwardKinematics(obj, encoders, contact)</span></span>
+<span class="srcline"><span class="lineno"><a href="2,455" id="srcline455">455</a></span><span class="line">            <span class="comment">% Function to perform Right-Invariant EKF update from forward</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,456" id="srcline456">456</a></span><span class="line">            <span class="comment">% kinematic measurements</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,457" id="srcline457">457</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,458" id="srcline458">458</a></span><span class="line">            R_pred = obj.X(1:3,1:3);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,459" id="srcline459">459</a></span><span class="line">            M = length(obj.landmark_ids);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,460" id="srcline460">460</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,461" id="srcline461">461</a></span><span class="line">            <span class="keyword">if</span> contact(2) == 1 &amp;&amp; contact(1) == 1 </span></span>
+<span class="srcline"><span class="lineno"><a href="2,462" id="srcline462">462</a></span><span class="line">                <span class="comment">% Double Support</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,463" id="srcline463">463</a></span><span class="line">                s_pR = p_VectorNav_to_RightToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,464" id="srcline464">464</a></span><span class="line">                s_pL = p_VectorNav_to_LeftToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,465" id="srcline465">465</a></span><span class="line">                JR = J_VectorNav_to_RightToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,466" id="srcline466">466</a></span><span class="line">                JL = J_VectorNav_to_LeftToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,467" id="srcline467">467</a></span><span class="line">                </span></span>
+<span class="srcline"><span class="lineno"><a href="2,468" id="srcline468">468</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,469" id="srcline469">469</a></span><span class="line">                Y = [s_pR; 0; 1; -1; 0; zeros(M,1); </span></span>
+<span class="srcline"><span class="lineno"><a href="2,470" id="srcline470">470</a></span><span class="line">                     s_pL; 0; 1; 0; -1; zeros(M,1)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,471" id="srcline471">471</a></span><span class="line">                b = zeros(size(Y));</span></span>
+<span class="srcline"><span class="lineno"><a href="2,472" id="srcline472">472</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,473" id="srcline473">473</a></span><span class="line">                     zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,474" id="srcline474">474</a></span><span class="line">                N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, <span class="keyword">...</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,475" id="srcline475">475</a></span><span class="line">                            R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);  </span></span>
+<span class="srcline"><span class="lineno"><a href="2,476" id="srcline476">476</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M), zeros(3,7), zeros(3,M);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,477" id="srcline477">477</a></span><span class="line">                     zeros(3,7), zeros(3,M), eye(3), zeros(3,4), zeros(3,M)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,478" id="srcline478">478</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="2,479" id="srcline479">479</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,480" id="srcline480">480</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,481" id="srcline481">481</a></span><span class="line">                        </span></span>
+<span class="srcline"><span class="lineno"><a href="2,482" id="srcline482">482</a></span><span class="line">            <span class="keyword">elseif</span> contact(2) == 1 </span></span>
+<span class="srcline"><span class="lineno"><a href="2,483" id="srcline483">483</a></span><span class="line">                <span class="comment">% Single Support Right    </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,484" id="srcline484">484</a></span><span class="line">                s_pR = p_VectorNav_to_RightToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,485" id="srcline485">485</a></span><span class="line">                JR = J_VectorNav_to_RightToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,486" id="srcline486">486</a></span><span class="line">                </span></span>
+<span class="srcline"><span class="lineno"><a href="2,487" id="srcline487">487</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,488" id="srcline488">488</a></span><span class="line">                Y = [s_pR; 0; 1; -1; 0; zeros(M,1)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,489" id="srcline489">489</a></span><span class="line">                b = zeros(size(Y));</span></span>
+<span class="srcline"><span class="lineno"><a href="2,490" id="srcline490">490</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,3*M), zeros(3,6)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,491" id="srcline491">491</a></span><span class="line">                N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,492" id="srcline492">492</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M)];</span></span>
 <span class="srcline"><span class="lineno"><a href="2,493" id="srcline493">493</a></span><span class="line"></span></span>
-<span class="srcline"><span class="lineno"><a href="2,494" id="srcline494">494</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,495" id="srcline495">495</a></span><span class="line">                Y = [s_pL; 0; 1; 0; -1; zeros(M,1)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,496" id="srcline496">496</a></span><span class="line">                b = zeros(size(Y));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,497" id="srcline497">497</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,498" id="srcline498">498</a></span><span class="line">                N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,499" id="srcline499">499</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,500" id="srcline500">500</a></span><span class="line"></span></span>
-<span class="srcline"><span class="lineno"><a href="2,501" id="srcline501">501</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,502" id="srcline502">502</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,503" id="srcline503">503</a></span><span class="line">                </span></span>
-<span class="srcline"><span class="lineno"><a href="2,504" id="srcline504">504</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,505" id="srcline505">505</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,506" id="srcline506">506</a></span><span class="line">        <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,494" id="srcline494">494</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,495" id="srcline495">495</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,496" id="srcline496">496</a></span><span class="line">                </span></span>
+<span class="srcline"><span class="lineno"><a href="2,497" id="srcline497">497</a></span><span class="line">            <span class="keyword">elseif</span> contact(1) == 1 </span></span>
+<span class="srcline"><span class="lineno"><a href="2,498" id="srcline498">498</a></span><span class="line">                <span class="comment">% Single Support Left</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,499" id="srcline499">499</a></span><span class="line">                s_pL = p_VectorNav_to_LeftToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,500" id="srcline500">500</a></span><span class="line">                JL = J_VectorNav_to_LeftToeBottom(encoders);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,501" id="srcline501">501</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="2,502" id="srcline502">502</a></span><span class="line">                <span class="comment">% Measurement Model</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,503" id="srcline503">503</a></span><span class="line">                Y = [s_pL; 0; 1; 0; -1; zeros(M,1)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,504" id="srcline504">504</a></span><span class="line">                b = zeros(size(Y));</span></span>
+<span class="srcline"><span class="lineno"><a href="2,505" id="srcline505">505</a></span><span class="line">                H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,3*M), zeros(3,6)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,506" id="srcline506">506</a></span><span class="line">                N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,507" id="srcline507">507</a></span><span class="line">                PI = [eye(3), zeros(3,4), zeros(3,M)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,508" id="srcline508">508</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="2,509" id="srcline509">509</a></span><span class="line">                <span class="comment">% Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,510" id="srcline510">510</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,511" id="srcline511">511</a></span><span class="line">                </span></span>
+<span class="srcline"><span class="lineno"><a href="2,512" id="srcline512">512</a></span><span class="line">            <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,513" id="srcline513">513</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,514" id="srcline514">514</a></span><span class="line">        <span class="keyword">end</span></span></span>
 </pre>
 </div>
 <pre class="code">
-<span class="srcline"><span class="lineno"><a href="2,507" id="srcline507">507</a></span><span class="line">       </span></span>
-<span class="srcline"><span class="lineno"><a href="2,508" id="srcline508">508</a></span><span class="line">        <span class="keyword">function</span> [] = Update_StaticLandmarks(<span class="var type1" id="S272T13U2691">obj</span>, <span class="var type1" id="S273T36U2692">landmarks</span>)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,509" id="srcline509">509</a></span><span class="line">            <span class="comment">% Function to perform Right-Invariant EKF update from static</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,510" id="srcline510">510</a></span><span class="line">            <span class="comment">% landmark distance measurements</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,511" id="srcline511">511</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,512" id="srcline512">512</a></span><span class="line">            <span class="var type0" id="S274T0U2695">R_pred</span> = <span class="mxinfo " id="T34:U3"><span class="mxinfo " id="T12:U4"><span class="var type1" id="S272T13U2698">obj</span>.X</span>(<span class="mxinfo " id="T37:U6"><span class="mxinfo " id="T4:U7">1</span>:<span class="mxinfo " id="T4:U8">3</span></span>,<span class="mxinfo " id="T37:U9"><span class="mxinfo " id="T4:U10">1</span>:<span class="mxinfo " id="T4:U11">3</span></span>)</span>;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,513" id="srcline513">513</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,514" id="srcline514">514</a></span><span class="line">            <span class="comment">% Stack landmark measurements</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,515" id="srcline515">515</a></span><span class="line">            <span class="mxinfo " id="T33:U12"><span class="var type1" id="S275T33U2708">Y</span> = <span class="mxinfo " id="T33:U14">[]</span></span>; <span class="var type0" id="S276T0U2713">b</span> = <span class="mxinfo " id="T33:U15">[]</span>; <span class="var type0" id="S277T0U2718">H</span> = <span class="mxinfo " id="T33:U16">[]</span>; <span class="var type0" id="S278T0U2723">N</span> = <span class="mxinfo " id="T33:U17">[]</span>; <span class="var type0" id="S279T0U2728">PI</span> = <span class="mxinfo " id="T33:U18">[]</span>; </span></span>
-<span class="srcline"><span class="lineno"><a href="2,516" id="srcline516">516</a></span><span class="line">            <span class="keyword">for</span> <span class="var type1" id="S280T4U2733">i</span> = <span class="mxinfo " id="T38:U20"><span class="mxinfo " id="T4:U21">1</span>:<span class="mxinfo " id="T4:U22">size(<span class="var type1" id="S273T36U2738">landmarks</span>,2)</span></span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,517" id="srcline517">517</a></span><span class="line">                <span class="comment">% Search to see if measured landmark id is in the list of</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,518" id="srcline518">518</a></span><span class="line">                <span class="comment">% static landmarks</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,519" id="srcline519">519</a></span><span class="line">                <span class="mxinfo " id="T39:U24"><span class="var type1" id="S282T39U2742">id</span> = <span class="mxinfo " id="T39:U26">find(<span class="mxinfo " id="T40:U27"><span class="mxinfo " id="T41:U28"><span class="mxinfo " id="T9:U29"><span class="var type1" id="S272T13U2748">obj</span>.landmark_positions</span>(<span class="mxinfo " id="T42:U31">1</span>,<span class="mxinfo " id="T43:U32">:</span>)</span> == <span class="mxinfo " id="T4:U33"><span class="var type1" id="S273T36U2753">landmarks</span>(<span class="mxinfo " id="T4:U35">1</span>,<span class="var type1" id="S280T4U2755">i</span>)</span></span>)</span></span>;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,520" id="srcline520">520</a></span><span class="line">                <span class="keyword">if</span> <span class="mxinfo " id="T6:U37">~<span class="mxinfo " id="T6:U38">isempty(<span class="var type1" id="S282T39U2761">id</span>)</span></span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,521" id="srcline521">521</a></span><span class="line">                    <span class="comment">% Create measurement model</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,522" id="srcline522">522</a></span><span class="line">                    <span class="mxinfo " id="T33:U40"><span class="var type1" id="S275T33U2764"><span class="message error" id="M1F2C">Y</span></span></span> = <span class="mxinfo " id="T38:U41">vertcat(<span class="var type1" id="S275T33U2767">Y</span>, <span class="mxinfo " id="T38:U43">[<span class="mxinfo " id="T38:U44"><span class="var type1" id="S273T36U2771">landmarks</span>(<span class="mxinfo " id="T39:U46"><span class="mxinfo " id="T4:U47">2</span>:end</span>,<span class="var type1" id="S280T4U2776">i</span>)</span>; <span class="mxinfo " id="T4:U49">0</span>; <span class="mxinfo " id="T4:U50">1</span>; <span class="mxinfo " id="T4:U51">0</span>; <span class="mxinfo " id="T4:U52">0</span>]</span>)</span>;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,523" id="srcline523">523</a></span><span class="line">                    <span class="var type0" id="S276T0U2787">b</span> = vertcat(<span class="var type0" id="S276T0U2790">b</span>, [<span class="var type0" id="S272T0U2795">obj</span>.landmark_positions(2:end,<span class="var type0" id="S282T0U2801">id</span>); 0; 1; 0; 0]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,524" id="srcline524">524</a></span><span class="line">                    <span class="var type0" id="S277T0U2812">H</span> = vertcat(<span class="var type0" id="S277T0U2815">H</span>, [<span class="var type0" id="S272T0U2820">obj</span>.skew(<span class="var type0" id="S272T0U2824">obj</span>.landmark_positions(2:end,<span class="var type0" id="S282T0U2830">id</span>)), zeros(3), -eye(3), zeros(3), zeros(3), zeros(3), zeros(3)]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,525" id="srcline525">525</a></span><span class="line">                    <span class="var type0" id="S278T0U2852">N</span> = blkdiag(<span class="var type0" id="S278T0U2855">N</span>, <span class="var type0" id="S274T0U2858">R_pred</span> * <span class="var type0" id="S272T0U2860">obj</span>.Ql * <span class="var type0" id="S274T0U2863">R_pred</span>');</span></span>
-<span class="srcline"><span class="lineno"><a href="2,526" id="srcline526">526</a></span><span class="line">                    <span class="var type0" id="S279T0U2866">PI</span> = blkdiag(<span class="var type0" id="S279T0U2869">PI</span>, [eye(3), zeros(3,4)]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,527" id="srcline527">527</a></span><span class="line">                <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,528" id="srcline528">528</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,529" id="srcline529">529</a></span><span class="line">                 </span></span>
-<span class="srcline"><span class="lineno"><a href="2,530" id="srcline530">530</a></span><span class="line">            <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,531" id="srcline531">531</a></span><span class="line">            <span class="keyword">if</span> ~isempty(<span class="var type0" id="S275T0U2884">Y</span>)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,532" id="srcline532">532</a></span><span class="line">                <span class="var type0" id="S272T0U2888">obj</span>.Update_State(<span class="var type0" id="S275T0U2890">Y</span>, <span class="var type0" id="S276T0U2891">b</span>, <span class="var type0" id="S277T0U2892">H</span>, <span class="var type0" id="S278T0U2893">N</span>, <span class="var type0" id="S279T0U2894">PI</span>);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,533" id="srcline533">533</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,534" id="srcline534">534</a></span><span class="line">        <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,535" id="srcline535">535</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="2,515" id="srcline515">515</a></span><span class="line">       </span></span>
+<span class="srcline"><span class="lineno"><a href="2,516" id="srcline516">516</a></span><span class="line">        <span class="keyword">function</span> [] = Update_StaticLandmarks(<span class="var type1" id="S273T13U2733">obj</span>, <span class="var type1" id="S274T36U2734">landmarks</span>)</span></span>
+<span class="srcline"><span class="lineno"><a href="2,517" id="srcline517">517</a></span><span class="line">            <span class="comment">% Function to perform Right-Invariant EKF update from static</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,518" id="srcline518">518</a></span><span class="line">            <span class="comment">% landmark distance measurements</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,519" id="srcline519">519</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,520" id="srcline520">520</a></span><span class="line">            <span class="var type0" id="S275T0U2737">R_pred</span> = <span class="mxinfo " id="T34:U3"><span class="mxinfo " id="T12:U4"><span class="var type1" id="S273T13U2740">obj</span>.X</span>(<span class="mxinfo " id="T37:U6"><span class="mxinfo " id="T4:U7">1</span>:<span class="mxinfo " id="T4:U8">3</span></span>,<span class="mxinfo " id="T37:U9"><span class="mxinfo " id="T4:U10">1</span>:<span class="mxinfo " id="T4:U11">3</span></span>)</span>;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,521" id="srcline521">521</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,522" id="srcline522">522</a></span><span class="line">            <span class="comment">% Determine sizes (needed for codegen), (TODO: there is probably a better way to do this)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,523" id="srcline523">523</a></span><span class="line">            <span class="mxinfo " id="T5:U12"><span class="var type1" id="S276T5U2750">lm_cnt</span> = <span class="mxinfo " id="T4:U14">0</span></span>;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,524" id="srcline524">524</a></span><span class="line">            coder.varsize(<span class="string">'lm_cnt'</span>, [1 10]); <span class="comment">%lm_cnt must never exceed 10</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,525" id="srcline525">525</a></span><span class="line">            <span class="keyword">for</span> <span class="var type1" id="S278T4U2764">i</span> = <span class="mxinfo " id="T38:U16"><span class="mxinfo " id="T4:U17">1</span>:<span class="mxinfo " id="T4:U18">size(<span class="var type1" id="S274T36U2769">landmarks</span>,2)</span></span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,526" id="srcline526">526</a></span><span class="line">                <span class="mxinfo " id="T39:U20"><span class="var type1" id="S280T39U2773">id</span> = <span class="mxinfo " id="T39:U22">find(<span class="mxinfo " id="T40:U23"><span class="mxinfo " id="T41:U24"><span class="mxinfo " id="T9:U25"><span class="var type1" id="S273T13U2779">obj</span>.landmark_positions</span>(<span class="mxinfo " id="T42:U27">1</span>,<span class="mxinfo " id="T43:U28">:</span>)</span> == <span class="mxinfo " id="T4:U29"><span class="var type1" id="S274T36U2784">landmarks</span>(<span class="mxinfo " id="T4:U31">1</span>,<span class="var type1" id="S278T4U2786">i</span>)</span></span>,1)</span></span>;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,527" id="srcline527">527</a></span><span class="line">                <span class="keyword">if</span> <span class="mxinfo " id="T6:U33">~<span class="mxinfo " id="T6:U34">isempty(<span class="var type1" id="S280T39U2793">id</span>)</span></span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,528" id="srcline528">528</a></span><span class="line">                    <span class="mxinfo " id="T5:U36"><span class="var type1" id="S276T5U2796">lm_cnt</span> = <span class="mxinfo " id="T5:U38"><span class="var type1" id="S276T5U2798">lm_cnt</span> + <span class="mxinfo " id="T4:U40">1</span></span></span>;</span></span>
+<span class="srcline"><span class="lineno"><a href="2,529" id="srcline529">529</a></span><span class="line">                <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,530" id="srcline530">530</a></span><span class="line">            <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,531" id="srcline531">531</a></span><span class="line">            <span class="var type0" id="S283T0U2802">Y</span> = zeros(<span class="mxinfo " id="T39:U41"><span class="message error" id="M1F2C"><span class="mxinfo " id="T4:U42">7</span>*<span class="var type1" id="S276T5U2807">lm_cnt</span></span></span>,<span class="mxinfo " id="T4:U44">1</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,532" id="srcline532">532</a></span><span class="line">            <span class="var type0" id="S285T0U2811">b</span> = zeros(7*<span class="var type0" id="S276T0U2816">lm_cnt</span>,1);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,533" id="srcline533">533</a></span><span class="line">            <span class="var type0" id="S286T0U2820">H</span> = zeros(3*<span class="var type0" id="S276T0U2825">lm_cnt</span>,21);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,534" id="srcline534">534</a></span><span class="line">            <span class="var type0" id="S287T0U2829">N</span> = zeros(3*<span class="var type0" id="S276T0U2834">lm_cnt</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,535" id="srcline535">535</a></span><span class="line">            <span class="var type0" id="S288T0U2837">PI</span> = zeros(3*<span class="var type0" id="S276T0U2842">lm_cnt</span>,7*<span class="var type0" id="S276T0U2845">lm_cnt</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,536" id="srcline536">536</a></span><span class="line">            </span></span>
+<span class="srcline"><span class="lineno"><a href="2,537" id="srcline537">537</a></span><span class="line">            <span class="comment">% Stack landmark measurements (TODO: Optimize this)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,538" id="srcline538">538</a></span><span class="line">            <span class="keyword">for</span> <span class="var type0" id="S278T0U2848">i</span> = 1:size(<span class="var type0" id="S274T0U2853">landmarks</span>,2)</span></span>
+<span class="srcline"><span class="lineno"><a href="2,539" id="srcline539">539</a></span><span class="line">                <span class="comment">% Search to see if measured landmark id is in the list of</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,540" id="srcline540">540</a></span><span class="line">                <span class="comment">% static landmarks</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,541" id="srcline541">541</a></span><span class="line">                <span class="var type0" id="S280T0U2857">id</span> = find(<span class="var type0" id="S273T0U2863">obj</span>.landmark_positions(1,:) == <span class="var type0" id="S274T0U2868">landmarks</span>(1,<span class="var type0" id="S278T0U2870">i</span>),1);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,542" id="srcline542">542</a></span><span class="line">                <span class="keyword">if</span> ~isempty(<span class="var type0" id="S280T0U2877">id</span>)</span></span>
+<span class="srcline"><span class="lineno"><a href="2,543" id="srcline543">543</a></span><span class="line">                    <span class="comment">% Create measurement model</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,544" id="srcline544">544</a></span><span class="line">                    <span class="var type0" id="S283T0U2881">Y</span>(7*(<span class="var type0" id="S278T0U2888">i</span>-1)+1:7*(<span class="var type0" id="S278T0U2896">i</span>-1)+7) = [<span class="var type0" id="S274T0U2902">landmarks</span>(2:end,<span class="var type0" id="S278T0U2907">i</span>); 0; 1; 0; 0];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,545" id="srcline545">545</a></span><span class="line">                    <span class="var type0" id="S285T0U2919">b</span>(7*(<span class="var type0" id="S278T0U2926">i</span>-1)+1:7*(<span class="var type0" id="S278T0U2934">i</span>-1)+7) = [<span class="var type0" id="S273T0U2941">obj</span>.landmark_positions(2:end,<span class="var type0" id="S280T0U2947">id</span>); 0; 1; 0; 0];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,546" id="srcline546">546</a></span><span class="line">                    <span class="var type0" id="S286T0U2959">H</span>(3*(<span class="var type0" id="S278T0U2966">i</span>-1)+1:3*(<span class="var type0" id="S278T0U2974">i</span>-1)+3,:) = [<span class="var type0" id="S273T0U2982">obj</span>.skew(<span class="var type0" id="S273T0U2986">obj</span>.landmark_positions(2:end,<span class="var type0" id="S280T0U2992">id</span>)), zeros(3), -eye(3), zeros(3), zeros(3), zeros(3), zeros(3)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,547" id="srcline547">547</a></span><span class="line">                    <span class="var type0" id="S287T0U3015">N</span>(3*(<span class="var type0" id="S278T0U3022">i</span>-1)+1:3*(<span class="var type0" id="S278T0U3030">i</span>-1)+3,3*(<span class="var type0" id="S278T0U3039">i</span>-1)+1:3*(<span class="var type0" id="S278T0U3047">i</span>-1)+3) = <span class="var type0" id="S275T0U3052">R_pred</span> * <span class="var type0" id="S273T0U3054">obj</span>.Ql * <span class="var type0" id="S275T0U3057">R_pred</span>';</span></span>
+<span class="srcline"><span class="lineno"><a href="2,548" id="srcline548">548</a></span><span class="line">                    <span class="var type0" id="S288T0U3061">PI</span>(3*(<span class="var type0" id="S278T0U3068">i</span>-1)+1:3*(<span class="var type0" id="S278T0U3076">i</span>-1)+3,7*(<span class="var type0" id="S278T0U3085">i</span>-1)+1:7*(<span class="var type0" id="S278T0U3093">i</span>-1)+7) = [eye(3), zeros(3,4)];</span></span>
+<span class="srcline"><span class="lineno"><a href="2,549" id="srcline549">549</a></span><span class="line">                <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,550" id="srcline550">550</a></span><span class="line">            <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,551" id="srcline551">551</a></span><span class="line">                 </span></span>
+<span class="srcline"><span class="lineno"><a href="2,552" id="srcline552">552</a></span><span class="line">            <span class="comment">% Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,553" id="srcline553">553</a></span><span class="line">            <span class="keyword">if</span> ~isempty(<span class="var type0" id="S283T0U3110">Y</span>)</span></span>
+<span class="srcline"><span class="lineno"><a href="2,554" id="srcline554">554</a></span><span class="line">                <span class="var type0" id="S273T0U3114">obj</span>.Update_State(<span class="var type0" id="S283T0U3116">Y</span>, <span class="var type0" id="S285T0U3117">b</span>, <span class="var type0" id="S286T0U3118">H</span>, <span class="var type0" id="S287T0U3119">N</span>, <span class="var type0" id="S288T0U3120">PI</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="2,555" id="srcline555">555</a></span><span class="line">            <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,556" id="srcline556">556</a></span><span class="line">        <span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,557" id="srcline557">557</a></span><span class="line">        </span></span>
+<span class="srcline"><span class="lineno"><a href="2,558" id="srcline558">558</a></span><span class="line"><span class="comment">%         function [] = Update_Landmarks(obj, landmarks)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,559" id="srcline559">559</a></span><span class="line"><span class="comment">%             % Function to perform Right-Invariant EKF update from estimated</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,560" id="srcline560">560</a></span><span class="line"><span class="comment">%             % landmark distance measurements            </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,561" id="srcline561">561</a></span><span class="line"><span class="comment">%             </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,562" id="srcline562">562</a></span><span class="line"><span class="comment">%             R_pred = obj.X(1:3,1:3);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,563" id="srcline563">563</a></span><span class="line"><span class="comment">%                         </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,564" id="srcline564">564</a></span><span class="line"><span class="comment">%             % Stack landmark measurements</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,565" id="srcline565">565</a></span><span class="line"><span class="comment">%             Y = []; H = []; N = []; PI = []; new_landmarks = [];</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,566" id="srcline566">566</a></span><span class="line"><span class="comment">%             for i = 1:size(landmarks,2)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,567" id="srcline567">567</a></span><span class="line"><span class="comment">%                 % Search to see if measured landmark id is in the list of</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,568" id="srcline568">568</a></span><span class="line"><span class="comment">%                 % static landmarks</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,569" id="srcline569">569</a></span><span class="line"><span class="comment">%                 id = find(obj.landmark_ids == landmarks(1,i));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,570" id="srcline570">570</a></span><span class="line"><span class="comment">%                 if isempty(id)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,571" id="srcline571">571</a></span><span class="line"><span class="comment">%                     new_landmarks = horzcat(new_landmarks, landmarks(:,i));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,572" id="srcline572">572</a></span><span class="line"><span class="comment">%                 else</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,573" id="srcline573">573</a></span><span class="line"><span class="comment">%                     % Create measurement model</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,574" id="srcline574">574</a></span><span class="line"><span class="comment">%                     Y1 = [landmarks(2:end,i); 0; 1; 0; 0];</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,575" id="srcline575">575</a></span><span class="line"><span class="comment">%                     Y2 = zeros(length(obj.landmark_ids),1);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,576" id="srcline576">576</a></span><span class="line"><span class="comment">%                     Y2(id) = -1;</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,577" id="srcline577">577</a></span><span class="line"><span class="comment">%                     Y = vertcat(Y, [Y1; Y2]);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,578" id="srcline578">578</a></span><span class="line"><span class="comment">%                     </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,579" id="srcline579">579</a></span><span class="line"><span class="comment">%                     H1 = [zeros(3), zeros(3), -eye(3), zeros(3), zeros(3)];</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,580" id="srcline580">580</a></span><span class="line"><span class="comment">%                     H2 = zeros(3,3*length(obj.landmark_ids));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,581" id="srcline581">581</a></span><span class="line"><span class="comment">%                     H2(:,3*(id-1)+1:3*(id-1)+3) = eye(3);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,582" id="srcline582">582</a></span><span class="line"><span class="comment">%                     H3 = zeros(3,6);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,583" id="srcline583">583</a></span><span class="line"><span class="comment">%                     H = vertcat(H, [H1, H2, H3]);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,584" id="srcline584">584</a></span><span class="line"><span class="comment">%                     </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,585" id="srcline585">585</a></span><span class="line"><span class="comment">%                     N = blkdiag(N, R_pred * obj.Ql * R_pred');</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,586" id="srcline586">586</a></span><span class="line"><span class="comment">%                     PI = blkdiag(PI, [eye(3), zeros(3,4), zeros(3,length(obj.landmark_ids))]);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,587" id="srcline587">587</a></span><span class="line"><span class="comment">%                 end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,588" id="srcline588">588</a></span><span class="line"><span class="comment">%             end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,589" id="srcline589">589</a></span><span class="line"><span class="comment">%                  </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,590" id="srcline590">590</a></span><span class="line"><span class="comment">%             % Update State</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,591" id="srcline591">591</a></span><span class="line"><span class="comment">%             if ~isempty(Y)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,592" id="srcline592">592</a></span><span class="line"><span class="comment">%                 b = zeros(size(Y));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,593" id="srcline593">593</a></span><span class="line"><span class="comment">%                 obj.Update_State(Y, b, H, N, PI);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,594" id="srcline594">594</a></span><span class="line"><span class="comment">%             end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,595" id="srcline595">595</a></span><span class="line"><span class="comment">%             </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,596" id="srcline596">596</a></span><span class="line"><span class="comment">%             % Augment State for new landmarks</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,597" id="srcline597">597</a></span><span class="line"><span class="comment">%             if ~isempty(new_landmarks)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,598" id="srcline598">598</a></span><span class="line"><span class="comment">%                 [R, ~, p, ~, ~, ~, ~, ~] = obj.Separate_State(obj.X, obj.theta);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,599" id="srcline599">599</a></span><span class="line"><span class="comment">%                 for i = 1:size(new_landmarks,2)</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,600" id="srcline600">600</a></span><span class="line"><span class="comment">%                     % Initialize new landmark mean</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,601" id="srcline601">601</a></span><span class="line"><span class="comment">%                     obj.landmark_ids = horzcat(obj.landmark_ids, new_landmarks(1,i));</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,602" id="srcline602">602</a></span><span class="line"><span class="comment">%                     obj.X = blkdiag(obj.X, 1);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,603" id="srcline603">603</a></span><span class="line"><span class="comment">%                     % {W}_p_{WL} = {W}_p_{WB} + R_{WB}*{B}_p_{BL}</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,604" id="srcline604">604</a></span><span class="line"><span class="comment">%                     obj.X(1:3,end) = p + R*new_landmarks(2:end,i);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,605" id="srcline605">605</a></span><span class="line"><span class="comment">%                     </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,606" id="srcline606">606</a></span><span class="line"><span class="comment">%                     % Initialize new landmark covariance</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,607" id="srcline607">607</a></span><span class="line"><span class="comment">%                     F = eye(size(obj.P,1) - 6); % Start with I with state dim</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,608" id="srcline608">608</a></span><span class="line"><span class="comment">%                     F = vertcat(F, [zeros(3,6), eye(3), zeros(3,3*(size(obj.X,2)-6))]); % Add row to increase dimension</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,609" id="srcline609">609</a></span><span class="line"><span class="comment">%                     F = blkdiag(F, eye(6)); % Add block I for parameters</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,610" id="srcline610">610</a></span><span class="line"><span class="comment">%                     G = zeros(size(F,1),3);</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,611" id="srcline611">611</a></span><span class="line"><span class="comment">%                     G(end-8:end-6,:) = R_pred * obj.Ql;</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,612" id="srcline612">612</a></span><span class="line"><span class="comment">%                     obj.P = F*obj.P*F' + G*obj.Ql*G';</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,613" id="srcline613">613</a></span><span class="line"><span class="comment">%                 end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,614" id="srcline614">614</a></span><span class="line"><span class="comment">%             end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,615" id="srcline615">615</a></span><span class="line"><span class="comment">%             </span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,616" id="srcline616">616</a></span><span class="line"><span class="comment">%         end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,617" id="srcline617">617</a></span><span class="line">        </span></span>
 </pre>
 <div class="dead">
 <pre class="code">
-<span class="srcline"><span class="lineno"><a href="2,536" id="srcline536">536</a></span><span class="line">        <span class="keyword">function</span> [] = Update_Landmarks(obj, landmarks)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,537" id="srcline537">537</a></span><span class="line">            <span class="comment">% Function to perform Right-Invariant EKF update from estimated</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,538" id="srcline538">538</a></span><span class="line">            <span class="comment">% landmark distance measurements            </span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,539" id="srcline539">539</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,540" id="srcline540">540</a></span><span class="line">            R_pred = obj.X(1:3,1:3);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,541" id="srcline541">541</a></span><span class="line">                        </span></span>
-<span class="srcline"><span class="lineno"><a href="2,542" id="srcline542">542</a></span><span class="line">            <span class="comment">% Stack landmark measurements</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,543" id="srcline543">543</a></span><span class="line">            Y = []; H = []; N = []; PI = []; new_landmarks = [];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,544" id="srcline544">544</a></span><span class="line">            <span class="keyword">for</span> i = 1:size(landmarks,2)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,545" id="srcline545">545</a></span><span class="line">                <span class="comment">% Search to see if measured landmark id is in the list of</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,546" id="srcline546">546</a></span><span class="line">                <span class="comment">% static landmarks</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,547" id="srcline547">547</a></span><span class="line">                id = find(obj.landmark_ids == landmarks(1,i));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,548" id="srcline548">548</a></span><span class="line">                <span class="keyword">if</span> isempty(id)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,549" id="srcline549">549</a></span><span class="line">                    new_landmarks = horzcat(new_landmarks, landmarks(:,i));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,550" id="srcline550">550</a></span><span class="line">                <span class="keyword">else</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,551" id="srcline551">551</a></span><span class="line">                    <span class="comment">% Create measurement model</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,552" id="srcline552">552</a></span><span class="line">                    Y1 = [landmarks(2:end,i); 0; 1; 0; 0];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,553" id="srcline553">553</a></span><span class="line">                    Y2 = zeros(length(obj.landmark_ids),1);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,554" id="srcline554">554</a></span><span class="line">                    Y2(id) = -1;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,555" id="srcline555">555</a></span><span class="line">                    Y = vertcat(Y, [Y1; Y2]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,556" id="srcline556">556</a></span><span class="line">                    </span></span>
-<span class="srcline"><span class="lineno"><a href="2,557" id="srcline557">557</a></span><span class="line">                    H1 = [zeros(3), zeros(3), -eye(3), zeros(3), zeros(3)];</span></span>
-<span class="srcline"><span class="lineno"><a href="2,558" id="srcline558">558</a></span><span class="line">                    H2 = zeros(3,3*length(obj.landmark_ids));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,559" id="srcline559">559</a></span><span class="line">                    H2(:,3*(id-1)+1:3*(id-1)+3) = eye(3);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,560" id="srcline560">560</a></span><span class="line">                    H3 = zeros(3,6);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,561" id="srcline561">561</a></span><span class="line">                    H = vertcat(H, [H1, H2, H3]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,562" id="srcline562">562</a></span><span class="line">                    </span></span>
-<span class="srcline"><span class="lineno"><a href="2,563" id="srcline563">563</a></span><span class="line">                    N = blkdiag(N, R_pred * obj.Ql * R_pred');</span></span>
-<span class="srcline"><span class="lineno"><a href="2,564" id="srcline564">564</a></span><span class="line">                    PI = blkdiag(PI, [eye(3), zeros(3,4), zeros(3,length(obj.landmark_ids))]);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,565" id="srcline565">565</a></span><span class="line">                <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,566" id="srcline566">566</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,567" id="srcline567">567</a></span><span class="line">                 </span></span>
-<span class="srcline"><span class="lineno"><a href="2,568" id="srcline568">568</a></span><span class="line">            <span class="comment">% Update State</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,569" id="srcline569">569</a></span><span class="line">            <span class="keyword">if</span> ~isempty(Y)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,570" id="srcline570">570</a></span><span class="line">                b = zeros(size(Y));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,571" id="srcline571">571</a></span><span class="line">                obj.Update_State(Y, b, H, N, PI);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,572" id="srcline572">572</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,573" id="srcline573">573</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,574" id="srcline574">574</a></span><span class="line">            <span class="comment">% Augment State for new landmarks</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,575" id="srcline575">575</a></span><span class="line">            <span class="keyword">if</span> ~isempty(new_landmarks)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,576" id="srcline576">576</a></span><span class="line">                [R, ~, p, ~, ~, ~, ~, ~] = obj.Separate_State(obj.X, obj.theta);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,577" id="srcline577">577</a></span><span class="line">                <span class="keyword">for</span> i = 1:size(new_landmarks,2)</span></span>
-<span class="srcline"><span class="lineno"><a href="2,578" id="srcline578">578</a></span><span class="line">                    <span class="comment">% Initialize new landmark mean</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,579" id="srcline579">579</a></span><span class="line">                    obj.landmark_ids = horzcat(obj.landmark_ids, new_landmarks(1,i));</span></span>
-<span class="srcline"><span class="lineno"><a href="2,580" id="srcline580">580</a></span><span class="line">                    obj.X = blkdiag(obj.X, 1);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,581" id="srcline581">581</a></span><span class="line">                    <span class="comment">% {W}_p_{WL} = {W}_p_{WB} + R_{WB}*{B}_p_{BL}</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,582" id="srcline582">582</a></span><span class="line">                    obj.X(1:3,end) = p + R*new_landmarks(2:end,i);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,583" id="srcline583">583</a></span><span class="line">                    </span></span>
-<span class="srcline"><span class="lineno"><a href="2,584" id="srcline584">584</a></span><span class="line">                    <span class="comment">% Initialize new landmark covariance</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,585" id="srcline585">585</a></span><span class="line">                    F = eye(size(obj.P,1) - 6); <span class="comment">% Start with I with state dim</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,586" id="srcline586">586</a></span><span class="line">                    F = vertcat(F, [zeros(3,6), eye(3), zeros(3,3*(size(obj.X,2)-6))]); <span class="comment">% Add row to increase dimension</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,587" id="srcline587">587</a></span><span class="line">                    F = blkdiag(F, eye(6)); <span class="comment">% Add block I for parameters</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,588" id="srcline588">588</a></span><span class="line">                    G = zeros(size(F,1),3);</span></span>
-<span class="srcline"><span class="lineno"><a href="2,589" id="srcline589">589</a></span><span class="line">                    G(end-8:end-6,:) = R_pred * obj.Ql;</span></span>
-<span class="srcline"><span class="lineno"><a href="2,590" id="srcline590">590</a></span><span class="line">                    obj.P = F*obj.P*F' + G*obj.Ql*G';</span></span>
-<span class="srcline"><span class="lineno"><a href="2,591" id="srcline591">591</a></span><span class="line">                <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,592" id="srcline592">592</a></span><span class="line">            <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,593" id="srcline593">593</a></span><span class="line">            </span></span>
-<span class="srcline"><span class="lineno"><a href="2,594" id="srcline594">594</a></span><span class="line">        <span class="keyword">end</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,595" id="srcline595">595</a></span><span class="line">        </span></span>
-<span class="srcline"><span class="lineno"><a href="2,596" id="srcline596">596</a></span><span class="line">    <span class="keyword">end</span> <span class="comment">% methods</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,597" id="srcline597">597</a></span><span class="line"><span class="keyword">end</span> <span class="comment">% classdef</span></span></span>
-<span class="srcline"><span class="lineno"><a href="2,598" id="srcline598">598</a></span><span class="line"> </span></span>
+<span class="srcline"><span class="lineno"><a href="2,618" id="srcline618">618</a></span><span class="line">    <span class="keyword">end</span> <span class="comment">% methods</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,619" id="srcline619">619</a></span><span class="line"><span class="keyword">end</span> <span class="comment">% classdef</span></span></span>
+<span class="srcline"><span class="lineno"><a href="2,620" id="srcline620">620</a></span><span class="line"> </span></span>
 </pre>
 </div>

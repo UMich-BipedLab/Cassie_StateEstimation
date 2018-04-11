@@ -70,7 +70,7 @@ end
 
 % Landmarks
 for j = 1:length(lm_true)
-    if ~isnan(lm_ids(j))
+    if ~isnan(lm_ids(j)) && ~(lm_ids(j) == 0)
         lm_true{j} = repmat(landmark_positions(:,lm_ids(j)),1,N);
     else
         lm_true{j} = nan(3,N);
@@ -228,7 +228,7 @@ xlabel('time (sec)')
 
 %% Landmark Plot
 for i = 1:length(lm)
-    if all(all(isnan(lm{i})))
+    if all(all(isnan(lm{i}(2:end,:))))
         continue;
     end
     figure(fignum)
