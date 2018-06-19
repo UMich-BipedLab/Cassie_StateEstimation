@@ -97,7 +97,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         % EKF Noise Parameters
         g = [0;0;-9.81]; % Gravity
         imu_init_total_count = 1000;
-        max_landmarks = 20;
+        max_landmarks = 10;
         Eye = eye(100,100); % Pre-allocated Identity matrix (useful for codegen)
         Zeros = zeros(100,100); % Pre-allocated matrix of zeros (useful for codegen)
     end
@@ -159,7 +159,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             
         end % setupImpl
         
-        function [X, theta, P, enabled, landmark_ids] = stepImpl(obj, enable, t, w, a, encoders, contact, measured_landmarks, X_init)
+        function [X, theta, P, enabled, landmarks_with_ids] = stepImpl(obj, enable, t, w, a, encoders, contact, measured_landmarks, X_init)
             % Function that creates a state vector from sensor readings.
             %
             %   Inputs:
@@ -203,7 +203,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                     % Update state using forward kinematic measurements
                     obj.Update_ForwardKinematics(encoders, contact);
                     % Update state using landmark position measurements
-                    if ~isempty(measured_landmarks)
+                    if ~all(all(isnan(measured_landmarks))) %~isempty(measured_landmarks)
                         if obj.enable_static_landmarks
                             obj.Update_StaticLandmarks(measured_landmarks);
                         else
@@ -222,12 +222,12 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             obj.t_prev = t;
            
             % Output
-            X = obj.Augmented_State();
+            X = obj.X;
             theta = obj.theta;
             Pa = obj.Augmented_Covariance();
             P = Pa(1:21,1:21);
             enabled = double(obj.filter_enabled);
-            landmark_ids = obj.landmark_ids;
+            landmarks_with_ids = [obj.landmark_ids; obj.landmarks];
 
         end % stepImpl
 
@@ -236,40 +236,40 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             %RESETIMPL Reset System object states.
         end % resetImpl
         
-        function [X, theta, P, enabled, landmark_ids] = getOutputSizeImpl(obj)
+        function [X, theta, P, enabled, landmarks_with_ids] = getOutputSizeImpl(obj)
             %GETOUTPUTSIZEIMPL Get sizes of output ports.
-            X = [7+obj.max_landmarks, 7+obj.max_landmarks];
+            X = [7, 7];
             theta = [6,1];
-            P = [21 + 3*obj.max_landmarks, 21 + 3*obj.max_landmarks];
+            P = [21, 21];
             enabled = [1, 1];
-            landmark_ids = [1, obj.max_landmarks];
+            landmarks_with_ids = [4, obj.max_landmarks];
         end % getOutputSizeImpl
         
-        function [X, theta, P, enabled, landmark_ids] = getOutputDataTypeImpl(~)
+        function [X, theta, P, enabled, landmarks_with_ids] = getOutputDataTypeImpl(~)
             %GETOUTPUTDATATYPEIMPL Get data types of output ports.
             X = 'double';
             theta = 'double';
             P = 'double';
             enabled = 'double';
-            landmark_ids = 'double';
+            landmarks_with_ids = 'double';
         end % getOutputDataTypeImpl
         
-        function [X, theta, P, enabled, landmark_ids] = isOutputComplexImpl(~)
+        function [X, theta, P, enabled, landmarks_with_ids] = isOutputComplexImpl(~)
             %ISOUTPUTCOMPLEXIMPL Complexity of output ports.
             X = false;
             theta = false;
             P = false;
             enabled = false;
-            landmark_ids = false;
+            landmarks_with_ids = false;
         end % isOutputComplexImpl
         
-        function [X, theta, P, enabled, landmark_ids] = isOutputFixedSizeImpl(~)
+        function [X, theta, P, enabled, landmarks_with_ids] = isOutputFixedSizeImpl(~)
             %ISOUTPUTFIXEDSIZEIMPL Fixed-size or variale-size output ports.
-            X = false;
+            X = true;
             theta = true;
-            P = false;
+            P = true;
             enabled = true;
-            landmark_ids = false;
+            landmarks_with_ids = true;
         end % isOutputFixedSizeImpl
         
     end
@@ -572,6 +572,9 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             % Determine sizes (needed for codegen), (TODO: there is probably a better way to do this)
             lm_cnt = 0;
             for i = 1:size(measured_landmarks,2)
+                if measured_landmarks(1,i) == 0 || isnan(measured_landmarks(1,i))
+                    continue; % skip if id == 0
+                end
                 id = find(obj.landmark_positions(1,:) == measured_landmarks(1,i),1);
                 if ~isempty(id)
                     lm_cnt = lm_cnt + 1;
@@ -588,6 +591,9 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             for i = 1:size(measured_landmarks,2)
                 % Search to see if measured landmark id is in the list of
                 % static landmarks
+                if measured_landmarks(1,i) == 0 || isnan(measured_landmarks(1,i))
+                    continue; % skip if id == 0
+                end
                 id = find(obj.landmark_positions(1,:) == measured_landmarks(1,i),1);
                 if ~isempty(id)
                     % Create measurement model
@@ -613,6 +619,9 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             % Determine sizes (needed for codegen), (TODO: there is probably a better way to do this)
             lm_cnt = 0;
             for i = 1:size(measured_landmarks,2)
+                if measured_landmarks(1,i) == 0 || isnan(measured_landmarks(1,i))
+                    continue; % skip if id == 0
+                end
                 id = find(obj.landmark_ids == measured_landmarks(1,i),1);
                 if ~isempty(id)
                     lm_cnt = lm_cnt + 1;
@@ -625,13 +634,16 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             H = zeros(3*lm_cnt,3*(Xdim-3)+3+6);
             N = zeros(3*lm_cnt);
             PI = zeros(3*lm_cnt,Xdim*lm_cnt);
-            new_landmarks = zeros(4, size(measured_landmarks,2) - lm_cnt);
+            new_landmarks = obj.Zeros(1:4, 1:(sum(measured_landmarks(1,:) > 1) - lm_cnt));
             index = 1;
             
             % Stack landmark measurements for batch update
             for i = 1:size(measured_landmarks,2)
                 % Search to see if measured landmark id is in the list of
-                % static landmarks
+                % static landmarks 
+                if measured_landmarks(1,i) == 0 || isnan(measured_landmarks(1,i))
+                    continue; % skip if id == 0
+                end
                 id = find(obj.landmark_ids == measured_landmarks(1,i)); 
                 if isempty(id)
                     new_landmarks(:,index) = measured_landmarks(:,i);
@@ -665,6 +677,9 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             if ~isempty(new_landmarks)
                 [R, ~, p, ~, ~, ~, ~] = obj.Separate_State(obj.X, obj.theta);
                 for i = 1:size(new_landmarks,2)
+                    if measured_landmarks(1,i) == 0 || isnan(measured_landmarks(1,i))
+                        continue; % skip if id == 0
+                    end
                     if obj.num_landmarks < obj.max_landmarks
                         % Increment number of landmarks after extracting cov
                         Pa = obj.Augmented_Covariance();

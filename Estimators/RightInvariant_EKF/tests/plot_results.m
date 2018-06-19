@@ -16,33 +16,31 @@ bg = zeros(3,N);
 ba = zeros(3,N);
 
 Rib = Angles.Rx(pi);
-lm_ids = landmark_ids.signals.values(1,:,end);
 for i = 1:N
     % World Frame Estimates
-    R(:,:,i) = X.signals.values(1:3,1:3,i) * Rib;
+    R(:,:,i) = X.Data(1:3,1:3,i) * Rib;
     q(:,i) = Angles.Rotation_to_Euler(R(:,:,i));
-    v(:,i) = X.signals.values(1:3,4,i);
-    p(:,i) = X.signals.values(1:3,5,i);
-    dR(:,i) = X.signals.values(1:3,6,i);
-    dL(:,i) = X.signals.values(1:3,7,i);
+    v(:,i) = X.Data(1:3,4,i);
+    p(:,i) = X.Data(1:3,5,i);
+    dR(:,i) = X.Data(1:3,6,i);
+    dL(:,i) = X.Data(1:3,7,i);
     
-    % Landmarks
+%     % Landmarks
     for j = 1:length(lm)
-        lm{j}(:,i) = [lm_ids(j); X.signals.values(1:3,7+j,i)];
+        lm{j}(:,i) = landmarks.Data(:,j,i);
     end
     
     % Body Frame Estimates
     vb(:,i) = R(:,:,i)' * v(:,i);
     
     % Parameters
-    bg(:,i) = theta.signals.values(1:3,1,i);
-    ba(:,i) = theta.signals.values(4:6,1,i);
+    bg(:,i) = theta.Data(1:3,1,i);
+    ba(:,i) = theta.Data(4:6,1,i);
 end
 
 
 
 %% Parse True State
-
 R_true = zeros(3,3,N); 
 q_true = zeros(3,N);
 v_true = zeros(3,N); vb_true = v_true;
@@ -64,14 +62,14 @@ for i = 1:N
     vb_true(:,i) = R_true(:,:,i)' * v_true(:,i);
     
     % Parameters
-    bg_true(:,i) = gyro_bias.signals.values(i,:)';
-    ba_true(:,i) = accel_bias.signals.values(i,:)';
+    bg_true(:,i) = gyro_bias.Data(i,:)';
+    ba_true(:,i) = accel_bias.Data(i,:)';
 end
 
-% Landmarks
+% % Landmarks
 for j = 1:length(lm_true)
-    if ~isnan(lm_ids(j)) && ~(lm_ids(j) == 0)
-        lm_true{j} = repmat(landmark_positions(:,lm_ids(j)),1,N);
+    if j < length(landmark_positions(1,:))
+        lm_true{j} = repmat(landmark_positions(:,landmark_positions(1,j)),1,N);
     else
         lm_true{j} = nan(3,N);
     end
@@ -228,7 +226,7 @@ xlabel('time (sec)')
 
 %% Landmark Plot
 for i = 1:length(lm)
-    if all(all(isnan(lm{i}(2:end,:))))
+    if all(all(isnan(lm{i}(2:end,:)))) || lm{i}(1,end) == 0
         continue;
     end
     figure(fignum)

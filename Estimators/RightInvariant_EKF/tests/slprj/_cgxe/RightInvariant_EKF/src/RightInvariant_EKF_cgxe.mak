@@ -6,7 +6,7 @@ CPU = AMD64
 
 MODEL  = RightInvariant_EKF
 TARGET = cgxe
-MODULE_SRCS 	= m_MH1YGGHXm7BJTN0FViiwM.c
+MODULE_SRCS 	= m_F1Scry3smjzFxDJqc88Zr.c
 MODEL_SRC	= RightInvariant_EKF_cgxe.c
 MODEL_REG = RightInvariant_EKF_cgxe_registry.c
 MAKEFILE    = RightInvariant_EKF_cgxe.mak

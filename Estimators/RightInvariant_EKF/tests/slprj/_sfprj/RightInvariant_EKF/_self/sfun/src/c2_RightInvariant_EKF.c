@@ -364,7 +364,7 @@ static void sf_gateway_c2_RightInvariant_EKF
   int32_T c2_i78;
   _SFD_SYMBOL_SCOPE_PUSH(0U, 0U);
   _sfTime_ = sf_get_time(chartInstance->S);
-  _SFD_CC_CALL(CHART_ENTER_SFUNCTION_TAG, 1U, chartInstance->c2_sfEvent);
+  _SFD_CC_CALL(CHART_ENTER_SFUNCTION_TAG, 0U, chartInstance->c2_sfEvent);
   for (c2_i1 = 0; c2_i1 < 2; c2_i1++) {
     _SFD_DATA_RANGE_CHECK((*chartInstance->c2_contact)[c2_i1], 3U, 1U, 0U,
                           chartInstance->c2_sfEvent, false);
@@ -386,7 +386,7 @@ static void sf_gateway_c2_RightInvariant_EKF
   }
 
   chartInstance->c2_sfEvent = CALL_EVENT;
-  _SFD_CC_CALL(CHART_ENTER_DURING_FUNCTION_TAG, 1U, chartInstance->c2_sfEvent);
+  _SFD_CC_CALL(CHART_ENTER_DURING_FUNCTION_TAG, 0U, chartInstance->c2_sfEvent);
   for (c2_i5 = 0; c2_i5 < 4; c2_i5++) {
     c2_b_quaternion[c2_i5] = (*chartInstance->c2_quaternion)[c2_i5];
   }
@@ -821,7 +821,7 @@ static void sf_gateway_c2_RightInvariant_EKF
     (*chartInstance->c2_X_init)[c2_i77] = c2_b_X_init[c2_i77];
   }
 
-  _SFD_CC_CALL(EXIT_OUT_OF_FUNCTION_TAG, 1U, chartInstance->c2_sfEvent);
+  _SFD_CC_CALL(EXIT_OUT_OF_FUNCTION_TAG, 0U, chartInstance->c2_sfEvent);
   _SFD_SYMBOL_SCOPE_POP();
   _SFD_CHECK_FOR_STATE_INCONSISTENCY(_RightInvariant_EKFMachineNumber_,
     chartInstance->chartNumber, chartInstance->instanceNumber);

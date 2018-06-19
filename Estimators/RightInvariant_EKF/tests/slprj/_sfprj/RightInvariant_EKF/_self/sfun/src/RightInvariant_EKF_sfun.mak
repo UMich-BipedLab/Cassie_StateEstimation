@@ -6,7 +6,7 @@ CPU = AMD64
 
 MODEL     = RightInvariant_EKF
 TARGET      = sfun
-MODULE_SRCS   = c1_RightInvariant_EKF.c c2_RightInvariant_EKF.c c40_RightInvariant_EKF.c
+MODULE_SRCS   = c2_RightInvariant_EKF.c c40_RightInvariant_EKF.c
 MODEL_SRC  = RightInvariant_EKF_sfun.c
 MODEL_REG = RightInvariant_EKF_sfun_registry.c
 MAKEFILE    = RightInvariant_EKF_sfun.mak

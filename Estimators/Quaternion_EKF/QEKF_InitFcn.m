@@ -1,17 +1,22 @@
 %% Set sample times 
-EKF_SampleTime = 1/2000;
-Pose_UDP_SampleTime = 1/2000;
-IMU_UDP_SampleTime = 1/2000;
-JointState_UDP_SampleTime = 1/2000;
-Radio_UDP_SampleTime = 1/2000;
-Contact_UDP_SampleTime = 1/2000;
-Time_UDP_SampleTime = 1/2000;
+%cassieParameters = CassieParameters;
+simulationInitFcn;
+
+frequency = 1000;
+EKF_SampleTime = 1/frequency;
+Pose_UDP_SampleTime = 1/frequency;
+IMU_UDP_SampleTime = 1/frequency;
+JointState_UDP_SampleTime = 1/frequency;
+Radio_UDP_SampleTime = 1/frequency;
+Contact_UDP_SampleTime = 1/frequency;
+Time_UDP_SampleTime = 1/frequency;
+
 
 %% EKF Parameters
 
 % Enable bias estimation and measurement updates
 enable_bias_estimation = false;
-static_bias_initialization = false;
+static_bias_initialization = true;
 ekf_update_enabled = true;
 
 % Set inital IMU biases
