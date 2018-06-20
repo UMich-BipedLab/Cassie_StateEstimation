@@ -1,5 +1,5 @@
 %% Set sample times 
-%cassieParameters = CassieParameters;
+cassieParameters = CassieParameters;
 simulationInitFcn;
 
 frequency = 1000;
@@ -10,7 +10,6 @@ JointState_UDP_SampleTime = 1/frequency;
 Radio_UDP_SampleTime = 1/frequency;
 Contact_UDP_SampleTime = 1/frequency;
 Time_UDP_SampleTime = 1/frequency;
-
 
 %% EKF Parameters
 
