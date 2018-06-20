@@ -2,7 +2,7 @@
 %cassieParameters = CassieParameters;
 simulationInitFcn;
 
-frequency = 800;
+frequency = 1000;
 EKF_SampleTime = 1/frequency;
 Pose_UDP_SampleTime = 1/frequency;
 IMU_UDP_SampleTime = 1/frequency;
@@ -68,10 +68,14 @@ encoder_noise_std = deg2rad(0.5)*ones(14,1);
 landmark_noise_std = 0.01*ones(3,1);
 
 % Priors
-prior_base_pose_std = 1.01*ones(6,1); % This should be set larger if using static landmarks
-prior_base_velocity_std = 0.1*ones(3,1);
+prior_base_pose_std = [deg2rad(50)*ones(3,1); 0.01*ones(3,1)]; % This should be set larger if using static landmarks
+prior_base_velocity_std = 1.1*ones(3,1);
 prior_contact_position_std = 0.1*ones(3,1);
 prior_gyro_bias_std = 0.01*ones(3,1);
 prior_accel_bias_std = 0.05*ones(3,1);
 prior_forward_kinematics_std = 0.03*ones(3,1);
+
+
+
+
 
