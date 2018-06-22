@@ -2,14 +2,8 @@
 %cassieParameters = CassieParameters;
 simulationInitFcn;
 
-frequency = 1000;
-EKF_SampleTime = 1/frequency;
-Pose_UDP_SampleTime = 1/frequency;
-IMU_UDP_SampleTime = 1/frequency;
-JointState_UDP_SampleTime = 1/frequency;
-Radio_UDP_SampleTime = 1/frequency;
-Contact_UDP_SampleTime = 1/frequency;
-Time_UDP_SampleTime = 1/frequency;
+EKF_SampleTime = 1/1000;
+UDP_SampleTime = 1/500;
 
 %% Injected Noise Parameters
 
