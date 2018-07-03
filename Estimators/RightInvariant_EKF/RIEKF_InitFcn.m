@@ -1,6 +1,6 @@
 %% Set sample times 
 %cassieParameters = CassieParameters;
-simulationInitFcn;
+% simulationInitFcn;
 
 EKF_SampleTime = 1/1000;
 UDP_SampleTime = 1/500;
@@ -38,7 +38,7 @@ landmark_measurement_frequency = 1/10;
 
 % Enable bias estimation and measurement updates
 enable_bias_estimation = false;
-static_bias_initialization = true;
+static_bias_initialization = false;
 ekf_update_enabled = true;
 enable_static_landmarks = false;
 
@@ -63,7 +63,7 @@ landmark_noise_std = 0.01*ones(3,1);
 
 % Priors
 prior_base_pose_std = [deg2rad(50)*ones(3,1); 0.01*ones(3,1)]; % This should be set larger if using static landmarks
-prior_base_velocity_std = 1.1*ones(3,1);
+prior_base_velocity_std = 1.5*ones(3,1);
 prior_contact_position_std = 0.1*ones(3,1);
 prior_gyro_bias_std = 0.01*ones(3,1);
 prior_accel_bias_std = 0.05*ones(3,1);

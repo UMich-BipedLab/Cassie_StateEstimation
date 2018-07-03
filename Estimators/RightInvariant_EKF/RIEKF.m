@@ -43,46 +43,42 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     % PROTECTED PROPERTIES 
     properties (Access = protected)
-        params
     end 
     
     % PRIVATE PROPERTIES
     properties(Access = private)
-        X;
-        theta;
-        P;
-        filter_enabled;
-        bias_initialized;
-        ba0 = zeros(3,1);
-        bg0 = zeros(3,1);
-        a_init_vec;
-        w_init_vec;
-        imu_init_count = 1;
-        w_prev;
-        a_prev;
-        encoders_prev;
-        contact_prev;
-        t_prev;
+        X;                  % State Lie Group
+        theta;              % Extra state parameters
+        P;                  % Covariance of combined state
+        filter_enabled;     % Flag that specifies if the filter is enabled
+        bias_initialized;   % Flag that specifies if the IMU bias is initialized
+        bg0 = zeros(3,1);   % Initial gyroscope bias
+        ba0 = zeros(3,1);   % Initial accelerometer bias
+        w_init_vec;         % Vector of gyroscope measurements to aid initialization
+        a_init_vec;         % Vector of accelerometer measurements to aid initialization
+        imu_init_count = 1; % Counter to determine how much IMU data has been collected for static initialization
+        w_prev;             % Previous gyroscope measurement
+        a_prev;             % Previous accelerometer measurement
+        encoders_prev;      % Previous encoder measurement
+        contact_prev;       % Previous contact measurement
+        t_prev;             % Previous timestamp
         
-        % Sensor Covariances
-        Qg;    % Gyro Covariance Matrix
-        Qbg;   % Gyro bias Covariance Matrix
-        Qa;    % Accel Covariance Matrix
-        Qba;   % Accel Bias Covariance Matrix
-        Qc;    % Contact Covariance Matrix
-        Qe;    % Encoder Covariance Matrix
-        Np;    % Prior Forward Kinematics Covariance Matrix
-        P_prior;
+        % --- Sensor Covariances ---
+        Qg;      % Gyro Covariance Matrix
+        Qbg;     % Gyro bias Covariance Matrix
+        Qa;      % Accel Covariance Matrix
+        Qba;     % Accel Bias Covariance Matrix
+        Qc;      % Contact Covariance Matrix
+        Qe;      % Encoder Covariance Matrix
+        Np;      % Prior Forward Kinematics Covariance Matrix
+        P_prior; % Prior State Covariance Matrix
         
     end
     
     % PRIVATE CONSTANTS
     properties(Access = private, Constant)
-        % EKF Noise Parameters
-        g = [0;0;-9.81]; % Gravity
-        imu_init_total_count = 1000;
-        Eye = eye(100,100); % Pre-allocated Identity matrix (useful for codegen)
-        Zeros = zeros(100,100); % Pre-allocated matrix of zeros (useful for codegen)
+        g = [0;0;-9.81];             % Gravity vector
+        imu_init_total_count = 1000; % Number of IMU samples collected for static bias initialization
     end
     
     %% PROTECTED METHODS =====================================================
@@ -90,7 +86,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         
         function setupImpl(obj)
             %SETUPIMPL Initialize System object.
-            obj.params = CassieParameters;
             obj.filter_enabled = false;
             obj.bias_initialized = false;
             obj.a_init_vec = zeros(3, obj.imu_init_total_count);
@@ -110,7 +105,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                                   diag(obj.prior_contact_position_std.^2), ...
                                   diag(obj.prior_contact_position_std.^2), ...
                                   diag(obj.prior_gyro_bias_std.^2),...
-                                  diag(obj.prior_accel_bias_std.^2));
+                                  diag(obj.prior_accel_bias_std.^2)); % Prior State Covariance Matrix
                                          
             % Initialize bias estimates
             obj.bg0 = obj.gyro_bias_init;
@@ -131,7 +126,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         end % setupImpl
         
         function [X, theta, P, enabled] = stepImpl(obj, enable, t, w, a, encoders, contact, X_init)
-            % Function that creates a state vector from sensor readings.
+            % Right-Invariant EKF that creates an estimated state from sensor readings.
             %
             %   Inputs:
             %       enable    - flag to enable/disable the filter
@@ -149,7 +144,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             %       enabled - flag indicating when the filter is enabled
             %
             %   Author: Ross Hartley
-            %   Date:   1/19/2018
+            %   Date:   6/28/2018
             %
             
             % Initialize bias
@@ -195,13 +190,12 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             %RESETIMPL Reset System object states.
         end % resetImpl
         
-        function [X, theta, P, enabled, K] = getOutputSizeImpl(~)
+        function [X, theta, P, enabled] = getOutputSizeImpl(~)
             %GETOUTPUTSIZEIMPL Get sizes of output ports.
             X = [7, 7];
             theta = [6,1];
             P = [21, 21];
             enabled = [1, 1];
-            K = [3, 3];
         end % getOutputSizeImpl
         
         function [X, theta, P, enabled] = getOutputDataTypeImpl(~)
@@ -272,8 +266,19 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 Jr = eye(3) + ((1-cos(phi))/(phi^2))*A + ((phi-sin(phi))/(phi^3))*A*A;
             end
             % Construct group
-            dX = zeros(7);
+            dX = eye(7);
             dX(1:3,:) = [R, Jr*v(4:6), Jr*v(7:9), Jr*v(10:12), Jr*v(13:15)];
+        end
+        
+        function [R] = exp_SO3(obj, w)
+            % Exponential map of SO(3)
+            A = obj.skew(w(1:3));
+            phi = norm(w(1:3));
+            if phi < 1e-6
+                R = eye(3);
+            else
+                R = eye(3) + (sin(phi)/phi)*A + ((1-cos(phi))/(phi^2))*A^2;
+            end
         end
 
         function AdjX = Adjoint(obj, X)
@@ -318,8 +323,8 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 obj.X = X_init; 
                
                 ypr = Angles.Rotation_to_Euler(obj.X(1:3,1:3));
-                obj.X(1:3,1:3) = Angles.Euler_to_Rotation(ypr + deg2rad([50;50;50]));
-                obj.X(1:3,4) = [1;-1;0.5];
+                obj.X(1:3,1:3) = Angles.Euler_to_Rotation(ypr + deg2rad(50*(2*rand(3,1)-1)));
+                obj.X(1:3,4) = 1.0*(2*rand(3,1)-1);
                 
                 obj.theta = [obj.bg0; obj.ba0];
                 obj.P = obj.P_prior;
@@ -345,7 +350,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             a_k = a - ba;    % {I}_a_{WI}
             
             % Base Pose Dynamics
-            R_pred = R * Angles.Exp(w_k*dt);
+            R_pred = R * obj.exp_SO3(w_k*dt);
             v_pred = v + (R*a_k + obj.g)*dt;
             p_pred = p + v*dt + 0.5*(R*a_k + obj.g)*dt^2;
             
@@ -362,35 +367,34 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             
             % -- Linearized invariant error dynamics --
             
-            % Base
-            Fc = [       zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                  obj.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3);
-                         zeros(3),   eye(3), zeros(3), zeros(3), zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                         zeros(3), zeros(3), zeros(3), zeros(3), zeros(3)]; 
+            % Base pose, velocity, and contact
+            A = [       zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
+                 obj.skew(obj.g), zeros(3), zeros(3), zeros(3), zeros(3);
+                        zeros(3),   eye(3), zeros(3), zeros(3), zeros(3);
+                        zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
+                        zeros(3), zeros(3), zeros(3), zeros(3), zeros(3)]; 
            
-           % Parameters
-           Fc = blkdiag(Fc, zeros(6));               
-           Fc(1:15,end-5:end) = [             -R, zeros(3);
+           % IMU biases
+           A = blkdiag(A, zeros(6));               
+           A(1:15,end-5:end) = [             -R, zeros(3);
                                   -obj.skew(v)*R,       -R;
                                   -obj.skew(p)*R, zeros(3);
                                  -obj.skew(dR)*R, zeros(3);
                                  -obj.skew(dL)*R, zeros(3)];
-           
-            % Discretize
-            Fk = eye(size(Fc)) + Fc*dt; 
-            
-            Lc = blkdiag(obj.Adjoint(obj.X), eye(6));
+                                        
+            % Discretization
+            Phi = eye(size(A)) + A*dt; % Fast approximation of exp(A*dt)
+            Adj = blkdiag(obj.Adjoint(obj.X), eye(6));
             hR_R = R_VectorNav_to_RightToeBottom(encoders);
             hR_L = R_VectorNav_to_LeftToeBottom(encoders);
-            Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
-            Qk = Fk*Lc*Q*Lc'*Fk'*dt; % Discretized
+            Qk = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qbg, obj.Qba);             
+            Qk_hat = Phi * Adj * Qk * Adj' * Phi' * dt; % Approximated discretized noise matrix 
             
             % Construct predicted state
             [obj.X, obj.theta] = obj.Construct_State(R_pred, v_pred, p_pred, dR_pred, dL_pred, bg_pred, ba_pred);
             
             % Predict Covariance
-            obj.P = Fk * obj.P * Fk' + Qk;
+            obj.P = Phi * obj.P * Phi' + Qk_hat;
         end
         
         function [] = Update_State(obj, Y, b, H, N, PI)
@@ -400,11 +404,10 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             K = (obj.P * H')/S;
             
             % Compute measurement update
-            Xdim = size(obj.X,1);
-            Ydim = length(Y)/size(obj.X,1);
-            BigX = zeros(Xdim*Ydim);
+            Ydim = length(Y)/7;
+            BigX = zeros(7*Ydim);
             for i=1:Ydim
-                BigX(Xdim*(i-1)+1:Xdim*i,Xdim*(i-1)+1:Xdim*i) = obj.X;
+                BigX(7*(i-1)+1:7*i,7*(i-1)+1:7*i) = obj.X;
             end
             Z = BigX * Y - b;
             
@@ -416,8 +419,8 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             obj.theta = obj.theta + dtheta;
             
             % Update Covariance
-            I = eye(size(obj.P));
-            obj.P = (I - K*H)* obj.P *(I - K*H)' + K*N*K'; % Joseph update form
+            IKH = (eye(21) - K*H);
+            obj.P = IKH * obj.P * IKH' + K*N*K'; % Joseph update form
             
         end
         
@@ -425,7 +428,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         function [] = Update_ForwardKinematics(obj, encoders, contact)
             % Function to perform Right-Invariant EKF update from forward
             % kinematic measurements
-            
             R_pred = obj.X(1:3,1:3);
             
             if contact(2) == 1 && contact(1) == 1 
@@ -443,7 +445,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                      zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,6)];
                 N = blkdiag(R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np, ...
                             R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np);  
-%                 N =  blkdiag(obj.Np,obj.Np);
                 PI = [eye(3), zeros(3,4), zeros(3,7);
                      zeros(3,7), eye(3), zeros(3,4)];
 
@@ -460,7 +461,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 b = zeros(size(Y));
                 H = [zeros(3), zeros(3), -eye(3), eye(3), zeros(3), zeros(3,6)];
                 N = R_pred * JR * obj.Qe * JR' * R_pred' + obj.Np;
-%                 N =  obj.Np;
                 PI = [eye(3), zeros(3,4)];
 
                 % Update State
@@ -476,7 +476,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 b = zeros(size(Y));
                 H = [zeros(3), zeros(3), -eye(3), zeros(3), eye(3), zeros(3,6)];
                 N = R_pred * JL * obj.Qe * JL' * R_pred' + obj.Np;
-%                 N =  obj.Np;
                 PI = [eye(3), zeros(3,4)];
 
                 % Update State
