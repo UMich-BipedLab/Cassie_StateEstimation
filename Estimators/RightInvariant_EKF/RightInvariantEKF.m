@@ -1,5 +1,5 @@
 % State Estimator
-classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
+classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     %% Properties ==================================================
     
@@ -153,7 +153,7 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             
             % Initiaze filter
             % (does nothing if filter is already initialized)
-            if t > 0.01 && any(contact == 1) 
+            if t > 0.1 && any(contact == 1) 
                 obj.InitializeFilter(enable, X_init);
             end
             
@@ -321,11 +321,6 @@ classdef RIEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             % at least one foot is on the ground)
             if enable && ~obj.filter_enabled
                 obj.X = X_init; 
-               
-                ypr = Angles.Rotation_to_Euler(obj.X(1:3,1:3));
-                obj.X(1:3,1:3) = Angles.Euler_to_Rotation(ypr + deg2rad(50*(2*rand(3,1)-1)));
-                obj.X(1:3,4) = 1.0*(2*rand(3,1)-1);
-                
                 obj.theta = [obj.bg0; obj.ba0];
                 obj.P = obj.P_prior;
                 obj.filter_enabled = true;
