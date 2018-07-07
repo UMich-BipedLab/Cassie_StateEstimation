@@ -1,5 +1,5 @@
 % State Estimator
-classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
+classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
     
     % Public, tunable properties
     properties
@@ -7,8 +7,6 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         static_bias_initialization = true;
         % Enable Measurement Updates
         ekf_update_enabled = true;
-        % Sample Time
-        dt = 1/1000;
         % Enable Bias Estimation
         enable_bias_estimation = true;
         % Gyroscope Noise std
@@ -38,46 +36,45 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         % Prior Accelerometer Bias std
         prior_accel_bias_std = 0.1*ones(3,1);
         % Prior Forward Kinematics std
-        prior_forward_kinematics_std = 0.1*ones(3,1);        
+        prior_forward_kinematics_std = 0.1*ones(3,1);   
     end
     
     % PROTECTED PROPERTIES ==================================================
     properties (Access = protected)
-        params
     end % properties
     
-    % Private variables
+    % PRIVATE PROPERTIES
     properties(Access = private)
-        mu_prev;
-        Sigma_prev;
-        filter_enabled;
-        bias_initialized;
-        ba0 = zeros(3,1);
-        bg0 = zeros(3,1);
-        a_init_vec;
-        w_init_vec;
-        imu_init_count = 1;
-        flight_phase = true;
-        t_liftoff = 0;
+        mu;                 % State vector
+        Sigma;              % Covariance of state
+        filter_enabled;     % Flag that specifies if the filter is enabled
+        bias_initialized;   % Flag that specifies if the IMU bias is initialized
+        bg0 = zeros(3,1);   % Initial gyroscope bias
+        ba0 = zeros(3,1);   % Initial accelerometer bias
+        w_init_vec;         % Vector of gyroscope measurements to aid initialization
+        a_init_vec;         % Vector of accelerometer measurements to aid initialization
+        imu_init_count = 1; % Counter to determine how much IMU data has been collected for static initialization
+        w_prev;             % Previous gyroscope measurement
+        a_prev;             % Previous accelerometer measurement
+        encoders_prev;      % Previous encoder measurement
+        contact_prev;       % Previous contact measurement
+        t_prev;             % Previous timestamp
         
-        % Sensor Covariances
-        Qg;    % Gyro Covariance Matrix
-        Qbg;   % Gyro bias Covariance Matrix
-        Qa;    % Accel Covariance Matrix
-        Qba;   % Accel Bias Covariance Matrix
-        Qc;    % Contact Covariance Matrix
-        Qe;    % Encoder Covariance Matrix
-        Np;    % Prior Forward Kinematics Covariance Matrix
-        Sigma_prior;
-        
+        % --- Sensor Covariances ---
+        Qg;      % Gyro Covariance Matrix
+        Qbg;     % Gyro bias Covariance Matrix
+        Qa;      % Accel Covariance Matrix
+        Qba;     % Accel Bias Covariance Matrix
+        Qc;      % Contact Covariance Matrix
+        Qe;      % Encoder Covariance Matrix
+        Np;      % Prior Forward Kinematics Covariance Matrix
+        P_prior; % Prior State Covariance Matrix
     end
     
     % Pre-computed constants
     properties(Access = private, Constant)
-        % EKF Noise Parameters
-        g = [0;0;-9.81];          % Gravity
-        N = 21;
-        imu_init_total_count = 1000;
+        g = [0;0;-9.81];             % Gravity vector
+        imu_init_total_count = 1000; % Number of IMU samples collected for static bias initialization
     end
     
     % PROTECTED METHODS =====================================================
@@ -85,14 +82,10 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
         
         function setupImpl(obj)
             %SETUPIMPL Initialize System object.
-            obj.params = CassieParameters;
-            obj.mu_prev = [zeros(3,1); zeros(3,1); [1;0;0;0]; zeros(12,1)];
-            obj.Sigma_prev = zeros(21);
             obj.filter_enabled = false;
             obj.bias_initialized = false;
             obj.a_init_vec = zeros(3, obj.imu_init_total_count);
             obj.w_init_vec = zeros(3, obj.imu_init_total_count);
-            obj.t_liftoff = 0;
             
             % Initialize Sensor Covariances
             obj.Qg = diag(obj.gyro_noise_std.^2);          % Gyro Covariance Matrix
@@ -102,21 +95,32 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             obj.Qc = diag(obj.contact_noise_std.^2);       % Contact Covariance Matrix
             obj.Qe = diag(obj.encoder_noise_std.^2);       % Encoder Covariance Matrix
             obj.Np = diag(obj.prior_forward_kinematics_std.^2); % Prior Forward Kinematics Covariance Matrix
-            obj.Sigma_prior = blkdiag(diag(obj.prior_base_pose_std(1:3).^2), ...
-                                      diag(obj.prior_base_velocity_std.^2), ...
-                                      diag(obj.prior_base_pose_std(4:6).^2), ...
-                                      diag(obj.prior_contact_position_std.^2), ...
-                                      diag(obj.prior_contact_position_std.^2), ...
-                                      diag(obj.prior_accel_bias_std.^2),...
-                                      diag(obj.prior_gyro_bias_std.^2));
-                                  
+            obj.P_prior = blkdiag(diag(obj.prior_base_pose_std(1:3).^2), ...
+                                  diag(obj.prior_base_velocity_std.^2), ...
+                                  diag(obj.prior_base_pose_std(4:6).^2), ...
+                                  diag(obj.prior_contact_position_std.^2), ...
+                                  diag(obj.prior_contact_position_std.^2), ...
+                                  diag(obj.prior_gyro_bias_std.^2),...
+                                  diag(obj.prior_accel_bias_std.^2)); % Prior State Covariance Matrix
+                                         
             % Initialize bias estimates
             obj.bg0 = obj.gyro_bias_init;
             obj.ba0 = obj.accel_bias_init;
+            
+            % Initialze State and Covariance
+            obj.mu = [zeros(6,1); [0;0;0;1]; zeros(12,1)];
+            obj.Sigma = eye(21);
+            
+            % Variables to store previous measurements
+            obj.w_prev = zeros(3,1);
+            obj.a_prev = zeros(3,1);
+            obj.encoders_prev = zeros(14,1);
+            obj.contact_prev = zeros(2,1);
+            obj.t_prev = 0;
                         
         end % setupImpl
         
-        function [mu, Sigma, enabled] = stepImpl(obj, EnableFilter, t, w, a, e, q_init, v_init, contact)
+        function [mu, Sigma, enabled] = stepImpl(obj, enable, t, w, a, encoders, contact, mu_init)
             % Function that creates a state vector from sensor readings.
             %
             %   Inputs:
@@ -138,8 +142,8 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             %
             
             % Wait until valid encoder signal
-            if norm(e) == 0
-                EnableFilter = 0; % Keep filter disabled
+            if norm(encoders) == 0
+                enable = 0; % Keep filter disabled
             end
             
             % Initialize bias
@@ -159,28 +163,28 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                             obj.bias_initialized = true;
                         end
                     end
-                    EnableFilter = 0; % Keep filter disabled until bias is initialized
+                    enable = 0; % Keep filter disabled until bias is initialized
                 end
             else
                 obj.bias_initialized = true;
             end
             
             % If filter is disabled, zero everything
-            if ~EnableFilter
+            if ~enable
                 obj.mu_prev = [zeros(6,1);[0;0;0;1]; zeros(6,1); zeros(6,1)];
                 obj.Sigma_prev = eye(21,21);
                 obj.filter_enabled = false;
             end
             
             % If filter is enabled, initialize filter is not already initialized
-            if EnableFilter && ~obj.filter_enabled
+            if enable && ~obj.filter_enabled
                 if contact(1) == 1
                     % Initialize with left foot at 0
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
-                    r0 = - Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
+                    r0 = - Rwi * p_VectorNav_to_LeftToeBottom(encoders); % {W}_p_{WL}
 %                     r0 = zeros(3,1);
-                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
+                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(encoders); % {W}_p_{WR}
+                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(encoders); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
                     obj.Sigma_prev = obj.Sigma_prior;
                     obj.filter_enabled = true;
@@ -188,10 +192,10 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 elseif contact(2) == 1
                     % Initialize with right foot at 0
                     Rwi = Angles.Quaternion_to_Rotation(q_init);
-                    r0 = - Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
+                    r0 = - Rwi * p_VectorNav_to_RightToeBottom(encoders); % {W}_p_{WR}
 %                     r0 = zeros(3,1);
-                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(e); % {W}_p_{WL}
+                    pR = r0 + Rwi * p_VectorNav_to_RightToeBottom(encoders); % {W}_p_{WR}
+                    pL = r0 + Rwi * p_VectorNav_to_LeftToeBottom(encoders); % {W}_p_{WL}
                     obj.mu_prev = [r0; Rwi*v_init; Angles.Rotation_to_Quaternion(Rwi'); pR; pL; obj.ba0; obj.bg0];
                     obj.Sigma_prev = obj.Sigma_prior;
                     obj.filter_enabled = true;
@@ -227,8 +231,8 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             
             % Foot Position Dynamics
             Rwi = Angles.Quaternion_to_Rotation(q_p)';
-            pR_off = r_p + Rwi * p_VectorNav_to_RightToeBottom(e); % {W}_p_{WR}
-            pL_off = r_p + Rwi * p_VectorNav_to_LeftToeBottom(e);  % {W}_p_{WL}
+            pR_off = r_p + Rwi * p_VectorNav_to_RightToeBottom(encoders); % {W}_p_{WR}
+            pL_off = r_p + Rwi * p_VectorNav_to_LeftToeBottom(encoders);  % {W}_p_{WL}
             pR_p = contact(2)*pR + (1-contact(2))*pR_off;
             pL_p = contact(1)*pL + (1-contact(1))*pL_off;
             
@@ -250,8 +254,8 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                       
             Lc = blkdiag(zeros(3), -C', -eye(3), C', C', eye(3), eye(3));
             
-            hR_R = R_VectorNav_to_RightToeBottom(e);
-            hR_L = R_VectorNav_to_LeftToeBottom(e);
+            hR_R = R_VectorNav_to_RightToeBottom(encoders);
+            hR_L = R_VectorNav_to_LeftToeBottom(encoders);
             Q = blkdiag(zeros(3), obj.Qa, obj.Qg, hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L', obj.Qba, obj.Qbg); 
                       
             Fk = eye(21) + Fc*obj.dt; % Discretized
@@ -272,8 +276,8 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
             
             if contact(2) == 1 && contact(1) == 1 && obj.ekf_update_enabled 
                 % Double Support
-                s_pR = p_VectorNav_to_RightToeBottom(e);
-                s_pL = p_VectorNav_to_LeftToeBottom(e);
+                s_pR = p_VectorNav_to_RightToeBottom(encoders);
+                s_pL = p_VectorNav_to_LeftToeBottom(encoders);
 
                 y = [s_pR - C*(pR_p - r_p);
                      s_pL - C*(pL_p - r_p)];
@@ -281,8 +285,8 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
                 Hk = [-C, O, Angles.skew(C*(pR_p - r_p)), C, O, O, O;
                       -C, O, Angles.skew(C*(pL_p - r_p)), O, C, O, O];
                   
-                JR = J_VectorNav_to_RightToeBottom(e);
-                JL = J_VectorNav_to_LeftToeBottom(e);
+                JR = J_VectorNav_to_RightToeBottom(encoders);
+                JL = J_VectorNav_to_LeftToeBottom(encoders);
                 Rk = blkdiag(JR * obj.Qe * JR' + obj.Np, JL * obj.Qe * JL' + obj.Np);  
                 
                 % Compute measurement update
@@ -305,13 +309,13 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
 
             elseif contact(2) == 1 && obj.ekf_update_enabled
                 % Single Support Right    
-                s_pR = p_VectorNav_to_RightToeBottom(e);
+                s_pR = p_VectorNav_to_RightToeBottom(encoders);
 
                 y = s_pR - C*(pR_p - r_p);
                 O = zeros(3);
                 Hk = [-C, O, Angles.skew(C*(pR_p - r_p)), C, O, O, O];
                 
-                JR = J_VectorNav_to_RightToeBottom(e);
+                JR = J_VectorNav_to_RightToeBottom(encoders);
                 Rk = JR * obj.Qe * JR' + obj.Np;
                 
                 % Compute measurement update
@@ -334,13 +338,13 @@ classdef QEKF < matlab.System & matlab.system.mixin.Propagates %#codegen
 
             elseif contact(1) == 1 && obj.ekf_update_enabled
                 % Single Support Left
-                s_pL = p_VectorNav_to_LeftToeBottom(e);
+                s_pL = p_VectorNav_to_LeftToeBottom(encoders);
 
                 y = s_pL - C*(pL_p - r_p);
                 O = zeros(3);
                 Hk = [-C, O, Angles.skew(C*(pL_p - r_p)), O, C, O, O];
 
-                JL = J_VectorNav_to_LeftToeBottom(e);
+                JL = J_VectorNav_to_LeftToeBottom(encoders);
                 Rk = JL * obj.Qe * JL' + obj.Np;
                 
                 % Compute measurement update

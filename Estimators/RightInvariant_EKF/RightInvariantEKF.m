@@ -72,7 +72,6 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
         Qe;      % Encoder Covariance Matrix
         Np;      % Prior Forward Kinematics Covariance Matrix
         P_prior; % Prior State Covariance Matrix
-        
     end
     
     % PRIVATE CONSTANTS
