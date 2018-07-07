@@ -522,12 +522,12 @@ static void init_script_number_translation(uint32_T c42_machineNumber, uint32_T
   (void)(c42_instanceNumber);
   _SFD_SCRIPT_TRANSLATION(c42_chartNumber, c42_instanceNumber, 0U,
     sf_debug_get_script_id(
-    "C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\gen\\kin\\m\\J_VectorNav_to_RightT"
-    "oeBottom.m"));
+    "C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Examples\\gen\\kin\\m\\J_VectorNav_"
+    "to_RightToeBottom.m"));
   _SFD_SCRIPT_TRANSLATION(c42_chartNumber, c42_instanceNumber, 1U,
     sf_debug_get_script_id(
-    "C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\gen\\kin\\m\\J_VectorNav_to_LeftTo"
-    "eBottom.m"));
+    "C:\\Users\\Ross Hartley\\Documents\\GitHub\\Ross_Cassie_Controllers\\submodules\\Cassie_StateEstimation\\Examples\\gen\\kin\\m\\J_VectorNav_"
+    "to_LeftToeBottom.m"));
 }
 
 static const mxArray *c42_sf_marshallOut(void *chartInstanceVoid, void
@@ -859,20 +859,20 @@ const mxArray *sf_c42_lib_StateEstimation_get_eml_resolved_functions_info(void)
 {
   const mxArray *c42_nameCaptureInfo = NULL;
   const char * c42_data[7] = {
-    "789ced55cf6e1241181fb46df4a0213d78aa498f5e60aa214deb09815aaa8540a18d620c1d968f65c2cc0eeeccb6e0451f40dfc0c497d017f0e0d1a35e7d041f"
-    "c083cbf26f195921298162fa6527c32fbf99ef37dfb7b33f50e820134208dd76c73577fc5c475edc72c7ef370885bbd0e3fca1f3a1de7c5dc3fd58452b837d7e",
-    "fe436f3684a5a0a5ba80510bb20eaf80ed028b7018a4a90a4e2d62a962bb09c80629d819543da6461914298743e10369ea02fed8470d4087eafc4ed6c168141c"
-    "8eecba1c1e97f901f2f5e7d4577f07f7eb5f19d31f3faf87de1f7ddd383dffbab5317a7e3e1430f7e326bae1431bf1bededb807ce3ea1ba77737402facf14fca",
-    "2760286167c9595989f21135ebaa28202194121c4dae7fdaf3ac6978789e2e53154e85c150efd705f5de07ea8df22ff65e261fe26309b6c44742cacd34b11583"
-    "364e09c3e1602989f7a94a3b158f2d27899414ca49f72bb105639d5dd2a97051751848dc630b8a28d8938a72a2a8b0b009166e500b73fccf6e47a7e9f70cefdb",
-    "a78fdfbe3f9aeffd9ef7f7b438bd5640be69efef9d00bdb0c6374a562a57b25379b3e4a42c2bdfce3e4f9f2787e7c84dd099740e1480e795ff3460ffa43eea71"
-    "b97c7e73663ebf11a017d678cd790ea13662f34bebf3ef02f546f985fafc48b7a353f57b86f7edf395cf2fbfcf4ba8ecc4b69fb68f73668b9bb4c9557eff55fa",
-    "cae7f5b85c3e1f8fcfca575703f4c23dc6608437d1e27cfc5ee8627a5f02f546f999fa383129a3aa1d31bc5591aa307041d4d439b1013fd8babf13d9daee3cda"
-    "321b181009b8f07722f78f80914a4409c11a54e16277963843541d7baf28daecd631c77bf863fdeb7fedff0bad6f5efeaf4eb22d83ef9abbaf63b478f0cc74f2",
-    "995822b1fcfeff0759c645db", "" };
+    "789ced554d6f1241181eb46df4a0213d78aa498f5e60aa214deb09f9b0540b81421bc5183a2c2fcb84991ddc996dc18bfe093d99f827f40f78f0e851ff86470f"
+    "1e5cbe97911592123e4cdf30997df2cccc33efcbbbcfa2c0613a8010baed8e6beef8b9893a71cb1dbfdf2014ecc20ee70d9d0ff4e6eb1aeec73a5a1becf3f21f",
+    "7ab3212c054dd5058c5a907178196c175884c3e0988ae0d422962ab41a806c90829d43a5c354298302e570243c20455dc01f7ba8016853ede7780d8c7adee1c8"
+    "aec9e1759917204f7dce3cf9b773e8e7bf36a63e5e5e0fbd3efaba717ade751b63f4bc7cc067eec74d74c383b6a27dbdb73ee78dcb6f9cde5d1fbda0c63f299d",
+    "82a1849d21e725254ac7d4aca9828098504a703439ff69efb3a1e1e17dba4c4538650643bd5f97d47befab37cabf48be8c3fc427126c898f8594db29622b062d"
+    "9c1086c3c152121f509572ca1db61427525228c5ddb7c4168cb57749a7cc45c56120718fcd2ba2202915e5445161e16493f0469b37c1c2756a618eff59f6309f",
+    "6bdf7dfaf8edfba3f9f6f9bcdfabc5e9357dce9bb68feff8e80535be5eb412d9a29dc89945276159b956e679ea223ebc477682cea47b201f3caff3cf7cf64faa"
+    "a31ecbe5f7db33f3fb2d1fbda0c66bc67304d511bb5f59bf7fe7ab37ca2f87df8f943d3ccd7776867df7f9caef57dfef2594f722bb4f5b2759b3c94ddae02a77",
+    "f02a75e5f77a2c97df47a3b3f2d7751fbd608f3198eb4168717e7e2f7039bd2fbe7aa3fc4cfd9c989451d50a199d55a18a30705e54d505b1013fd8b9bf17dad9"
+    "6dffb4653630201270feef83dc0f0223e5901282d5a9c285ee2c719aa81aeefc45e146378f39f6e18fcdafffb5ff2f34bf79f9bf3acd340dbe6feebf8ed0c2e1",
+    "33d3c9a523b1d8eafbff1fcf854cf9", "" };
 
   c42_nameCaptureInfo = NULL;
-  emlrtNameCaptureMxArrayR2016a(c42_data, 4856U, &c42_nameCaptureInfo);
+  emlrtNameCaptureMxArrayR2016a(c42_data, 4872U, &c42_nameCaptureInfo);
   return c42_nameCaptureInfo;
 }
 
@@ -1525,10 +1525,10 @@ static void mdlSetWorkWidths_c42_lib_StateEstimation(SimStruct *S)
   }
 
   ssSetOptions(S,ssGetOptions(S)|SS_OPTION_WORKS_WITH_CODE_REUSE);
-  ssSetChecksum0(S,(3784920690U));
-  ssSetChecksum1(S,(3357183925U));
-  ssSetChecksum2(S,(1577190582U));
-  ssSetChecksum3(S,(1327969417U));
+  ssSetChecksum0(S,(259550241U));
+  ssSetChecksum1(S,(1789748359U));
+  ssSetChecksum2(S,(51851800U));
+  ssSetChecksum3(S,(2032456095U));
   ssSetmdlDerivatives(S, NULL);
   ssSetExplicitFCSSCtrl(S,1);
   ssSetStateSemanticsClassicAndSynchronous(S, true);

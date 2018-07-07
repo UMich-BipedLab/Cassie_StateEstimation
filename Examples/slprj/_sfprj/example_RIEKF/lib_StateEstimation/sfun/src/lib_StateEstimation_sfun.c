@@ -61,10 +61,10 @@ unsigned int sf_lib_StateEstimation_process_check_sum_call( int nlhs, mxArray *
       machineName[(sizeof(machineName)/sizeof(char)-1)] = '\0';
       if (!strcmp(machineName,"lib_StateEstimation")) {
         if (nrhs==3) {
-          ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(1263662464U);
-          ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(1151779722U);
-          ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(1130604438U);
-          ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(2622618377U);
+          ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(2467803036U);
+          ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(4118112696U);
+          ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(2103596544U);
+          ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(4267776367U);
         } else if (nrhs==4) {
           unsigned int chartFileNumber;
           chartFileNumber = (unsigned int)mxGetScalar(prhs[3]);

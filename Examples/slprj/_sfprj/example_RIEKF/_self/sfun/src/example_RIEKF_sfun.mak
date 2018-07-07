@@ -26,7 +26,7 @@ LD     = link.exe
 LIBCMD = lib.exe
 #------------------------------ Include/Lib Path ------------------------------
 
-USER_INCLUDES   =  /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\slprj\_sfprj\example_riekf\_self\sfun\src" /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples" /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\gen\kin\src"
+USER_INCLUDES   =  /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\slprj\_sfprj\example_riekf\_self\sfun\src" /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples" /I "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src"
 AUX_INCLUDES   = 
 MLSLSF_INCLUDES = \
     /I "C:\Program Files\MATLAB\R2017b\extern\include" \
@@ -93,24 +93,24 @@ $(MEX_FILE_NAME) : $(MAKEFILE) $(OBJS) $(SFCLIB) $(AUX_LNK_OBJS) $(USER_LIBS) $(
 	@echo ### Compiling "$<"
 	$(CC) $(CFLAGS) $(INCLUDE_PATH) "$<"
 
-p_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
-R_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
-J_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
-p_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
-R_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
-J_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
-	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
-	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\..\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
+p_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_RightToeBottom_src.c"
+R_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_RightToeBottom_src.c"
+J_VectorNav_to_RightToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_RightToeBottom_src.c"
+p_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\p_VectorNav_to_LeftToeBottom_src.c"
+R_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\R_VectorNav_to_LeftToeBottom_src.c"
+J_VectorNav_to_LeftToeBottom_src.obj :  "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
+	@echo ### Compiling "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
+	$(CC) $(CFLAGS) $(INCLUDE_PATH) "C:\Users\ross hartley\documents\GitHub\ross_cassie_controllers\submodules\cassie_stateestimation\Examples\gen\kin\src\J_VectorNav_to_LeftToeBottom_src.c"
 
 c_mexapi_version.obj :  "C:\Program Files\MATLAB\R2017b\extern\version\c_mexapi_version.c"
 	@echo ### Compiling "C:\Program Files\MATLAB\R2017b\extern\version\c_mexapi_version.c"

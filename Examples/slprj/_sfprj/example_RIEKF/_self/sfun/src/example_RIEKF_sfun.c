@@ -65,18 +65,18 @@ unsigned int sf_example_RIEKF_process_check_sum_call( int nlhs, mxArray * plhs[]
         ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(0.0);
       }
     } else if (!strcmp(commandName,"target")) {
-      ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(3492648823U);
-      ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(2577510343U);
-      ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(438068061U);
-      ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(3264875508U);
+      ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(4086141506U);
+      ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(2049796066U);
+      ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(4194459904U);
+      ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(2037149850U);
     } else {
       return 0;
     }
   } else {
-    ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(2229151861U);
-    ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(3899778435U);
-    ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(3092470270U);
-    ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(4285824173U);
+    ((real_T *)mxGetPr((plhs[0])))[0] = (real_T)(2967748688U);
+    ((real_T *)mxGetPr((plhs[0])))[1] = (real_T)(3694276464U);
+    ((real_T *)mxGetPr((plhs[0])))[2] = (real_T)(3615194714U);
+    ((real_T *)mxGetPr((plhs[0])))[3] = (real_T)(1912264647U);
   }
 
   return 1;

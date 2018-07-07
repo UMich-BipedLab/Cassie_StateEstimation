@@ -1,7 +1,9 @@
 %% Add Paths
 clear; matlabrc; restoredefaultpath; clc;
-addpath(genpath('../'));
-addpath(genpath('../../agility-cassie-doc/Software')); % SimMechanics 
+addpath('../');
+addpath_Cassie_StateEstimation; % Add paths needed for RIEKF
+addpath(genpath('../../agility-cassie-doc/Software')); % Agility Robotics Code 
+addpath(genpath('gen/')); % Add generated code for kinematics
 
 %% Open simulation
 model = 'example_RIEKF';
