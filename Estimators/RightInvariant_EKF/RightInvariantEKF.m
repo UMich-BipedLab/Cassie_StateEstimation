@@ -9,8 +9,6 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
         static_bias_initialization = true;
         % Enable Measurement Updates
         ekf_update_enabled = true;
-        % Enable Bias Estimation
-        enable_bias_estimation = true;
         % Gyroscope Noise std
         gyro_noise_std = 0.1*ones(3,1);
         % Gyroscope Bias Noise std
@@ -152,8 +150,8 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             
             % Initiaze filter
             % (does nothing if filter is already initialized)
-            if t > 0.1 && any(contact == 1) 
-                obj.InitializeFilter(enable, X_init);
+            if t > 0.1 
+                obj.InitializeFilter(enable, X_init, contact);
             end
             
             % Only run if filter is enabled
@@ -315,18 +313,18 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             end
         end
         
-        function [] = InitializeFilter(obj, enable, X_init)
+        function [] = InitializeFilter(obj, enable, X_init, contact)
             % Attempt to enable filter (successful if enable is true, and
             % at least one foot is on the ground)
-            if enable && ~obj.filter_enabled
+            if enable && ~obj.filter_enabled && any(contact == 1) 
                 obj.X = X_init; 
                 obj.theta = [obj.bg0; obj.ba0];
                 obj.P = obj.P_prior;
                 obj.filter_enabled = true;
             end
 
-            % If filter is disabled, zero everything
-            if ~enable || ~obj.filter_enabled
+            % If enable is disabled, zero everything
+            if ~enable
                 obj.X = eye(7);
                 obj.theta = zeros(6,1);
                 obj.P = eye(21);
