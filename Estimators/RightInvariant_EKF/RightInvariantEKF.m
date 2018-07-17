@@ -426,8 +426,8 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
                 % Double Support
                 s_pR = p_VectorNav_to_RightToeBottom(encoders);
                 s_pL = p_VectorNav_to_LeftToeBottom(encoders);
-                JR = J_VectorNav_to_RightToeBottom(encoders);
-                JL = J_VectorNav_to_LeftToeBottom(encoders);
+                JR = Jp_VectorNav_to_RightToeBottom(encoders);
+                JL = Jp_VectorNav_to_LeftToeBottom(encoders);
                 
                 % Measurement Model
                 Y = [s_pR; 0; 1; -1; 0; 
@@ -446,7 +446,7 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             elseif contact(2) == 1 
                 % Single Support Right    
                 s_pR = p_VectorNav_to_RightToeBottom(encoders);
-                JR = J_VectorNav_to_RightToeBottom(encoders);
+                JR = Jp_VectorNav_to_RightToeBottom(encoders);
                 
                 % Measurement Model
                 Y = [s_pR; 0; 1; -1; 0];
@@ -461,7 +461,7 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             elseif contact(1) == 1 
                 % Single Support Left
                 s_pL = p_VectorNav_to_LeftToeBottom(encoders);
-                JL = J_VectorNav_to_LeftToeBottom(encoders);
+                JL = Jp_VectorNav_to_LeftToeBottom(encoders);
 
                 % Measurement Model
                 Y = [s_pL; 0; 1; 0; -1];
