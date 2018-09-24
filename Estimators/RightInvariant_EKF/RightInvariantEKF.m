@@ -144,6 +144,18 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             %   Date:   6/28/2018
             %
             
+            % Return if any input nan values are detected
+            if (any(isnan(w)) || any(isnan(a)) || any(isnan(encoders)) || any(isnan(contact)) || any(any(isnan(X_init))))
+                X = eye(7);
+                X(1:3,:) = [eye(3), [1;2;3], [4;5;6], [7;8;9], [10;11;12]];
+                theta = obj.theta;
+                P = obj.P;
+                enabled = double(obj.filter_enabled);
+                return
+            end
+            
+
+            
             % Initialize bias
             % (does nothing if bias is already initialized)
             obj.InitializeBias(w, a, X_init)
@@ -173,12 +185,22 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             obj.encoders_prev = encoders;
             obj.contact_prev = contact;
             obj.t_prev = t;
-           
+            
             % Output
             X = obj.X;
             theta = obj.theta;
             P = obj.P;
             enabled = double(obj.filter_enabled);
+            
+            % Return if any output nan values are detected
+            if (any(any(isnan(X))) || any(isnan(theta)) || any(any(isnan(P))))
+                X = eye(7);
+                X(1:3,:) = [eye(3), [2;4;6], [8;10;12], [14;16;18], [20;22;24]];
+                theta = [1;2;3;4;5;6];
+                P = eye(21);
+                enabled = double(obj.filter_enabled);
+                return
+            end
 
         end % stepImpl
 
