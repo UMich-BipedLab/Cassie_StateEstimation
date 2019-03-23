@@ -112,7 +112,10 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             %   Author: Ross Hartley
             %   Date:   3/6/2019
             %
-                        
+            
+            % Change contact to discrete
+            contact = double(contact==1);
+            
             % Wait until valid encoder signal and t_prev is set
             if norm(encoders) == 0 || obj.t_prev == 0
                 enable = 0; % Keep filter disabled
@@ -129,7 +132,10 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
                 % If filter trigger is enabled, initialize filter is not already initialized
                 obj.X_prev = X_init;
                 obj.Theta_prev = Theta_init;
-                obj.P_prev = obj.P_prior;
+                M = eye(21);
+                Rt = obj.X_prev(1:3,1:3)';
+                M(4:15,4:15) = blkdiag(Rt,Rt,Rt,Rt);
+                obj.P_prev = M*obj.P_prior*M';
                 obj.filter_enabled = true;
             end
             
@@ -141,13 +147,16 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             w = w - bg;
             a = a - ba;
             gx = Lie.skew(obj.g);
-%             wx = Lie.skew(w);
-%             ax = Lie.skew(a);
+            wx = Lie.skew(w);
+            ax = Lie.skew(a);
             
             % Base Pose Dynamics
-            R_pred = R*Lie.Exp(w*dt);
-            v_pred = v + (R*a + obj.g)*dt;
-            p_pred = p + v*dt + 0.5*(R*a + obj.g)*dt^2;
+            G0 = Lie.Gamma(w*dt,0);
+            G1 = Lie.Gamma(w*dt,1);
+            G2 = Lie.Gamma(w*dt,2);
+            R_pred = R*G0;
+            v_pred = v + (R*G1*a + obj.g)*dt;
+            p_pred = p + v*dt + (R*G2*a + 0.5*obj.g)*dt^2;
             
             % Foot Position Dynamics
             dL_off = p_pred + R_pred * p_VectorNav_to_LeftToeBottom(encoders); 
@@ -158,23 +167,47 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             % Bias Dynamics
             bg_pred = bg; 
             ba_pred = ba;
-  
-            % Linearized error dynamics
-            F = [zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),              -R, zeros(3);
-                       gx, zeros(3), zeros(3), zeros(3), zeros(3),  -Lie.skew(v)*R,       -R;
-                 zeros(3),   eye(3), zeros(3), zeros(3), zeros(3),  -Lie.skew(p)*R, zeros(3);
-                 zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Lie.skew(dL)*R, zeros(3);
-                 zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -Lie.skew(dR)*R, zeros(3);
-                 zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3);
-                 zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),        zeros(3), zeros(3)];
-                      
-            G = blkdiag(Lie.Adjoint(obj.X_prev),eye(6));
+                 
+            % Analytical State transition matrix
+            Phi = eye(21);
+            theta = norm(w);
+            if (theta > 1e-6)
+                int_G0aG1t = ax*Lie.Gamma(-w*dt,2)*dt^2 ...
+                    + ((sin(theta*dt)-theta*dt*cos(theta*dt))/(theta^3))*(wx*ax) ...
+                    - ((cos(2*theta*dt)-4*cos(theta*dt)+3)/(4*theta^4))*(wx*ax*wx) ...
+                    + ((4*sin(theta*dt)+sin(2*theta*dt)-4*theta*dt*cos(theta*dt)-2*theta*dt)/(4*theta^5))*(wx*ax*wx^2) ...
+                    + (((theta*dt)^2-2*theta*dt*sin(theta*dt)-2*cos(theta*dt)+2)/(2*theta^4))*(wx^2*ax) ...
+                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(4*theta^5))*(wx^2*ax*wx) ...
+                    + ((2*(theta*dt)^2-4*theta*dt*sin(theta*dt)-cos(2*theta*dt)+1)/(4*theta^6))*(wx^2*ax*wx^2);
+                int2_G0aG1t = ax*Lie.Gamma(-w*dt,3)*dt^3 ...
+                    - ((theta*dt*sin(theta*dt)+2*cos(theta*dt)-2)/(theta^4))*(wx*ax) ...
+                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(8*theta^5))*(wx*ax*wx) ...
+                    - ((2*(theta*dt)^2+8*theta*dt*sin(theta*dt)+16*cos(theta*dt)+cos(2*theta*dt)-17)/(8*theta^6))*(wx*ax*wx^2) ...
+                    + (((theta*dt)^3+6*theta*dt-12*sin(theta*dt)+6*theta*dt*cos(theta*dt))/(6*theta^5))*(wx^2*ax) ...
+                    - ((6*(theta*dt)^2+16*cos(theta*dt)-cos(2*theta*dt)-15)/(8*theta^6))*(wx^2*ax*wx) ...
+                    + ((4*(theta*dt)^3+6*theta*dt-24*sin(theta*dt)-3*sin(2*theta*dt)+24*theta*dt*cos(theta*dt))/(24*theta^7))*(wx^2*ax*wx^2);
+            else
+                int_G0aG1t = (1/2)*ax*dt^2;
+                int2_G0aG1t = (1/6)*ax*dt^3;
+            end
             
+            Phi(4:6,1:3) = gx*dt;
+            Phi(7:9,1:3) = 0.5*gx*dt^2;
+            Phi(7:9,4:6) = eye(3)*dt;
+            Phi(1:3,16:18) = -R*G1*dt;
+            Phi(4:6,16:18) = -Lie.skew(v_pred)*R*G1*dt + int_G0aG1t;
+            Phi(7:9,16:18) = -Lie.skew(p_pred)*R*G1*dt + int2_G0aG1t;
+            Phi(10:12,16:18) = -Lie.skew(dL_pred)*R*G1*dt;
+            Phi(13:15,16:18) = -Lie.skew(dR_pred)*R*G1*dt;
+            Phi(4:6,19:21) = -R*Lie.Gamma(w*dt,1)*dt;
+            Phi(7:9,19:21) = -R*Lie.Gamma(w*dt,2)*dt^2;
+            
+                
+            % Discrete State Transition Matrix
             hR_R = R_VectorNav_to_RightToeBottom(encoders);
             hR_L = R_VectorNav_to_LeftToeBottom(encoders);
+            G = blkdiag(Lie.Adjoint(obj.X_prev),eye(6));
             Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L',  hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', obj.Qbg, obj.Qba); 
-                      
-            Phi = expm(F*dt); % approximate
             Qd = Phi*G*Q*G'*Phi'*dt; % approximate
 
             % Predicted state
@@ -182,6 +215,20 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             X_pred(1:3,:) = [R_pred, v_pred, p_pred, dL_pred, dR_pred];
             Theta_pred = [bg_pred; ba_pred];
             P_pred = Phi*obj.P_prev*Phi' + Qd;
+            
+%             % Verification of analytical state transition: 
+%             A = [     -wx, zeros(3), zeros(3), zeros(3), zeros(3),  -eye(3), zeros(3);
+%                       -ax,      -wx, zeros(3), zeros(3), zeros(3), zeros(3),  -eye(3); 
+%                  zeros(3),   eye(3),      -wx, zeros(3), zeros(3), zeros(3), zeros(3);
+%                  zeros(3), zeros(3), zeros(3),      -wx, zeros(3), zeros(3), zeros(3);
+%                  zeros(3), zeros(3), zeros(3), zeros(3),      -wx, zeros(3), zeros(3);
+%                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
+%                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3)];
+%             Phi_L = expm(A*dt);
+%             Adj_Xk1 = blkdiag(Lie.Adjoint(X_pred), eye(6));
+%             Adj_XkInv = blkdiag(Lie.Adjoint(inv(obj.X_prev)), eye(6));
+%             Phi_R = Adj_Xk1 * Phi_L * Adj_XkInv;
+            
             
             %% Update state using encoder measurements            
             Y = []; b = []; H = []; N = []; PI = []; BigX = [];

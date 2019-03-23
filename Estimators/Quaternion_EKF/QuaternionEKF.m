@@ -41,6 +41,10 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
         P_prev;              % Covariance of state
         t_prev;              % time
         filter_enabled; % Flag that specifies if the filter is enabled
+        x_pred_prev;
+        contact_prev;
+        dL_first;
+        dR_first;
         
         % --- Sensor Covariances ---
         Qg;      % Gyro Covariance Matrix
@@ -87,6 +91,8 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
             
             % Variables to store previous measurements
             obj.t_prev = 0;
+            obj.x_pred_prev = [1;zeros(21,1)];
+            obj.contact_prev = [0;0];
                         
         end % setupImpl
         
@@ -109,6 +115,9 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
             %   Author: Ross Hartley
             %   Date:   3/6/2019
             %
+            
+            % Change contact to discrete
+            contact = double(contact==1);
                         
             % Wait until valid encoder signal and t_prev is set
             if norm(encoders) == 0 || obj.t_prev == 0
@@ -126,9 +135,10 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
                 obj.x_prev = x_init;
                 obj.P_prev = obj.P_prior;
                 obj.filter_enabled = true;
+                obj.x_pred_prev = x_init;
             end
             
-            %% Predict state using IMU measurements
+             %% Predict state using IMU measurements
             [q, v, p, dL, dR, bg, ba] = obj.Separate_States(obj.x_prev);
             
             % Bias corrected IMU information
@@ -140,46 +150,83 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
             ax = Lie.skew(a);
             
             % Base Pose Dynamics
+            G0 = Lie.Gamma(w*dt,0);
+            G1 = Lie.Gamma(w*dt,1);
+            G2 = Lie.Gamma(w*dt,2);
             R = Quaternion(q).getRotation().getValue();
-            R_pred = R*Lie.Exp(w*dt);
+            R_pred = R*G0;
             q_pred = Rotation3d(R_pred).getQuaternion().getValue();
-            v_pred = v + (R*a + obj.g)*dt;
-            p_pred = p + v*dt + 0.5*(R*a + obj.g)*dt^2;
+            v_pred = v + (R*G1*a + obj.g)*dt;
+            p_pred = p + v*dt + (R*G2*a + 0.5*obj.g)*dt^2;
             
             % Foot Position Dynamics
             dL_off = p_pred + R_pred * p_VectorNav_to_LeftToeBottom(encoders); 
             dR_off = p_pred + R_pred * p_VectorNav_to_RightToeBottom(encoders); 
             dL_pred = contact(1)*dL + (1-contact(1))*dL_off;
-            dR_pred = contact(2)*dR + (1-contact(2))*dR_off;
+            dR_pred = contact(2)*dR + (1-contact(2))*dR_off;                        
             
             % Bias Dynamics
             bg_pred = bg; 
             ba_pred = ba;
-              
-            % Linearized error dynamics
-            F = [      -wx, zeros(3), zeros(3), zeros(3), zeros(3),  -eye(3), zeros(3);
-                     -R*ax, zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),       -R;
-                  zeros(3),   eye(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3);
-                  zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3)];
-                      
-            G = blkdiag(eye(3), R, zeros(3), R, R, eye(3), eye(3));
+
+            % Analytical State transition matrix
+            Phi = eye(21);
+            theta = norm(w);
+            if (theta > 1e-6)
+                int_G0aG1t = ax*Lie.Gamma(-w*dt,2)*dt^2 ...
+                    + ((sin(theta*dt)-theta*dt*cos(theta*dt))/(theta^3))*(wx*ax) ...
+                    - ((cos(2*theta*dt)-4*cos(theta*dt)+3)/(4*theta^4))*(wx*ax*wx) ...
+                    + ((4*sin(theta*dt)+sin(2*theta*dt)-4*theta*dt*cos(theta*dt)-2*theta*dt)/(4*theta^5))*(wx*ax*wx^2) ...
+                    + (((theta*dt)^2-2*theta*dt*sin(theta*dt)-2*cos(theta*dt)+2)/(2*theta^4))*(wx^2*ax) ...
+                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(4*theta^5))*(wx^2*ax*wx) ...
+                    + ((2*(theta*dt)^2-4*theta*dt*sin(theta*dt)-cos(2*theta*dt)+1)/(4*theta^6))*(wx^2*ax*wx^2);
+                int2_G0aG1t = ax*Lie.Gamma(-w*dt,3)*dt^3 ...
+                    - ((theta*dt*sin(theta*dt)+2*cos(theta*dt)-2)/(theta^4))*(wx*ax) ...
+                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(8*theta^5))*(wx*ax*wx) ...
+                    - ((2*(theta*dt)^2+8*theta*dt*sin(theta*dt)+16*cos(theta*dt)+cos(2*theta*dt)-17)/(8*theta^6))*(wx*ax*wx^2) ...
+                    + (((theta*dt)^3+6*theta*dt-12*sin(theta*dt)+6*theta*dt*cos(theta*dt))/(6*theta^5))*(wx^2*ax) ...
+                    - ((6*(theta*dt)^2+16*cos(theta*dt)-cos(2*theta*dt)-15)/(8*theta^6))*(wx^2*ax*wx) ...
+                    + ((4*(theta*dt)^3+6*theta*dt-24*sin(theta*dt)-3*sin(2*theta*dt)+24*theta*dt*cos(theta*dt))/(24*theta^7))*(wx^2*ax*wx^2);
+            else
+                int_G0aG1t = (1/2)*ax*dt^2;
+                int2_G0aG1t = (1/6)*ax*dt^3;
+            end
+            Phi(1:3,1:3) = G0';
+            Phi(4:6,1:3) = -R*Lie.skew(G1*a)*dt;
+            Phi(7:9,1:3) = -R*Lie.skew(G2*a)*dt^2;
+            Phi(7:9,4:6) = eye(3)*dt;
+            Phi(1:3,16:18) = -G1'*dt;
+            Phi(4:6,16:18) = R*int_G0aG1t;
+            Phi(7:9,16:18) = R*int2_G0aG1t;
+            Phi(4:6,19:21) = -R*G1*dt;
+            Phi(7:9,19:21) = -R*G2*dt^2;
             
+            % Discrete noise covariance matrix
             hR_R = R_VectorNav_to_RightToeBottom(encoders);
             hR_L = R_VectorNav_to_LeftToeBottom(encoders);
             Q = blkdiag(obj.Qg, obj.Qa, zeros(3), hR_L*(obj.Qc+(1e4*eye(3).*(1-contact(1))))*hR_L',  hR_R*(obj.Qc+(1e4*eye(3).*(1-contact(2))))*hR_R', obj.Qbg, obj.Qba); 
-                      
-            Phi = expm(F*dt); % approximate
+            G = blkdiag(eye(3), R, zeros(3), R, R, eye(3), eye(3));
             Qd = Phi*G*Q*G'*Phi'*dt; % approximate
 
             % Predicted state
             x_pred = [q_pred; v_pred; p_pred; dL_pred; dR_pred; bg_pred; ba_pred];
             P_pred = Phi*obj.P_prev*Phi' + Qd;
             
+            
+%             % Verification of analytical state transition: 
+%             A = @(t) [                    -wx, zeros(3), zeros(3), zeros(3), zeros(3),  -eye(3),            zeros(3);
+%                        -R*Lie.Gamma(w*t,0)*ax, zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), -R*Lie.Gamma(w*t,0);
+%                                      zeros(3),   eye(3), zeros(3), zeros(3), zeros(3), zeros(3),            zeros(3);
+%                                      zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),            zeros(3);
+%                                      zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),            zeros(3);
+%                                      zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),            zeros(3);
+%                                      zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3),            zeros(3)];   
+%             [~,Phi_out] = ode45(@(t,Phi) reshape(A(t)*reshape(Phi,21,21),[],1), [0,dt], reshape(eye(21),[],1)); 
+%             Phi_num = reshape(Phi_out(end,:),21,21);                         
+                      
             %% Update state using encoder measurements            
             y = []; H = []; N = [];
+
             if (obj.ekf_update_enabled)
                 % Left Contact
                 if (contact(1) == 1)
@@ -214,7 +261,7 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
                 P = (I-K*H)*P_pred*(I-K*H)' + K*N*K'; % Joseph update form
             end
 
-            % If filter is disabled, output initial values
+            % If filter is disabled, output initial valuesx_prev
             if ~obj.filter_enabled
                 x = [1;zeros(21,1)]; % for quaternion
                 P = eye(21);
@@ -224,6 +271,9 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
             obj.t_prev = t;
             obj.x_prev = x;
             obj.P_prev = P;
+            
+            obj.x_pred_prev = x_pred;
+            obj.contact_prev = contact;
             
             % Output enable flag
             enabled = double(obj.filter_enabled);
