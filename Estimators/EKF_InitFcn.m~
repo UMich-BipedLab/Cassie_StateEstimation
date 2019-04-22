@@ -38,11 +38,11 @@ contact_noise_std = 0.01*ones(3,1);    % Continuous-Time
 encoder_noise_std = deg2rad(1)*ones(14,1);   % Discrete-Time
 
 % Priors
-prior_base_pose_std = [deg2rad(5);deg2rad(5);deg2rad(5); [0.001;0.001;0.001]]; 
+prior_base_pose_std = [deg2rad(5);deg2rad(5);deg2rad(5); [0.01;0.01;0.0]]; 
 prior_base_velocity_std = 1*ones(3,1);
 prior_contact_position_std = 1*ones(3,1);
-prior_gyro_bias_std = 0.001*ones(3,1);
-prior_accel_bias_std = 0.001*ones(3,1);
+prior_gyro_bias_std = 0.00001*ones(3,1);
+prior_accel_bias_std = 0.00001*ones(3,1);
 prior_forward_kinematics_std = 0.03*ones(3,1); % Discrete-Time
 
    

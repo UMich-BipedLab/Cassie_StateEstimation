@@ -1,11 +1,16 @@
 %% Plot covariance ellipses
 % clear; clc; close all;
+% addpath(genpath('../../'))
 
-load('EKF_run_v1')
+% load('EKF_run_v1')
 
 X_true = [quat2dcm(true_state.Data(end,1:4))', true_state.Data(end,5:7)'; 0,0,0,1];
 Sigma_riekf = P_riekf.Data([1,2,3,7,8,9],[1,2,3,7,8,9],end);
 Sigma_qekf = P_qekf.Data([1,2,3,7,8,9],[1,2,3,7,8,9],end);
+
+% Sigma_riekf(1:3,1:3) = 0.1*eye(3);
+% Sigma_riekf(1:3,4:6) = zeros(3);
+% Sigma_riekf(4:6,1:3) = 1*eye(3);
 
 % Uniformly sample (n-1)-sphere
 % n = 6;
@@ -24,6 +29,7 @@ Y_sph = cos(THETA) .* sin(PHI);
 Z_sph = sin(THETA);
 sphere = [X_sph(:), Y_sph(:), Z_sph(:)];
 sphere = [sphere, sphere];
+% sphere = randn(10000,6); 
 
 % Chi-squared 6-DOF 95% percent confidence (0.05): 12.592
 L_inekf = chol(Sigma_riekf, 'lower');
@@ -34,7 +40,7 @@ ELLIPSOID_inekf = zeros(size(sphere,1),3);
 ELLIPSOID_qekf = zeros(size(sphere,1),3); 
 for i=1:size(sphere,1)
     % Right-invariant
-    xi = scale * L_inekf * sphere(i,:)'./norm(sphere(i,:)');
+    xi = scale * L_inekf * sphere(i,:)';%./norm(sphere(i,:)');
     X = Lie.Exp(xi)*X_true; 
     ELLIPSOID_inekf(i,:) = [X(1,4), X(2,4), X(3,4)];
     
@@ -58,7 +64,7 @@ X_ell = reshape(ELLIPSOID_qekf(:,1), size(X_sph));
 Y_ell = reshape(ELLIPSOID_qekf(:,2), size(Y_sph));
 Z_ell = reshape(ELLIPSOID_qekf(:,3), size(Z_sph));
 surf(X_ell, Y_ell, Z_ell, 'FaceColor', VermillionRed, 'EdgeColor', 'none'); alpha(.5)
-axis equal tight
+axis equal
 
 figure; grid on; hold on;
 plot3(ELLIPSOID_inekf(:,1), ELLIPSOID_inekf(:,2), ELLIPSOID_inekf(:,3),'b.')

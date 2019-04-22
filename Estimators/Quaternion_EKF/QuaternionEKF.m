@@ -146,20 +146,20 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
             w = w - bg;
             a = a - ba;
 %             gx = Lie.skew(obj.g);
-            wx = Lie.skew(w);
+%             wx = Lie.skew(w);
             ax = Lie.skew(a);
             
             % Base Pose Dynamics
             G0 = Lie.Gamma(w*dt,0);
             G1 = Lie.Gamma(w*dt,1);
             G2 = Lie.Gamma(w*dt,2);
-            R = Quaternion(q).getRotation().getValue();
-            R_pred = R*G0;
-            q_pred = Rotation3d(R_pred).getQuaternion().getValue();
+            R = Angles.Quaternion_to_Rotation(q);
+            q_pred = Angles.Quaternion_Multiply(q, Angles.Quaternion_Exp(w*dt));
             v_pred = v + (R*G1*a + obj.g)*dt;
             p_pred = p + v*dt + (R*G2*a + 0.5*obj.g)*dt^2;
             
             % Foot Position Dynamics
+            R_pred = Angles.Quaternion_to_Rotation(q_pred);
             dL_off = p_pred + R_pred * p_VectorNav_to_LeftToeBottom(encoders); 
             dR_off = p_pred + R_pred * p_VectorNav_to_RightToeBottom(encoders); 
             dL_pred = contact(1)*dL + (1-contact(1))*dL_off;
@@ -171,33 +171,37 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
 
             % Analytical State transition matrix
             Phi = eye(21);
-            theta = norm(w);
-            if (theta > 1e-6)
-                int_G0aG1t = ax*Lie.Gamma(-w*dt,2)*dt^2 ...
-                    + ((sin(theta*dt)-theta*dt*cos(theta*dt))/(theta^3))*(wx*ax) ...
-                    - ((cos(2*theta*dt)-4*cos(theta*dt)+3)/(4*theta^4))*(wx*ax*wx) ...
-                    + ((4*sin(theta*dt)+sin(2*theta*dt)-4*theta*dt*cos(theta*dt)-2*theta*dt)/(4*theta^5))*(wx*ax*wx^2) ...
-                    + (((theta*dt)^2-2*theta*dt*sin(theta*dt)-2*cos(theta*dt)+2)/(2*theta^4))*(wx^2*ax) ...
-                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(4*theta^5))*(wx^2*ax*wx) ...
-                    + ((2*(theta*dt)^2-4*theta*dt*sin(theta*dt)-cos(2*theta*dt)+1)/(4*theta^6))*(wx^2*ax*wx^2);
-                int2_G0aG1t = ax*Lie.Gamma(-w*dt,3)*dt^3 ...
-                    - ((theta*dt*sin(theta*dt)+2*cos(theta*dt)-2)/(theta^4))*(wx*ax) ...
-                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(8*theta^5))*(wx*ax*wx) ...
-                    - ((2*(theta*dt)^2+8*theta*dt*sin(theta*dt)+16*cos(theta*dt)+cos(2*theta*dt)-17)/(8*theta^6))*(wx*ax*wx^2) ...
-                    + (((theta*dt)^3+6*theta*dt-12*sin(theta*dt)+6*theta*dt*cos(theta*dt))/(6*theta^5))*(wx^2*ax) ...
-                    - ((6*(theta*dt)^2+16*cos(theta*dt)-cos(2*theta*dt)-15)/(8*theta^6))*(wx^2*ax*wx) ...
-                    + ((4*(theta*dt)^3+6*theta*dt-24*sin(theta*dt)-3*sin(2*theta*dt)+24*theta*dt*cos(theta*dt))/(24*theta^7))*(wx^2*ax*wx^2);
+            phi = w*dt;
+            phix = Lie.skew(phi);
+            theta = norm(phi);            
+            if (norm(w) > 1e-6)
+                Psi1 = ax*Lie.Gamma(-phi,2) ...
+                    + ((sin(theta)-theta*cos(theta))/(theta^3))*(phix*ax) ...
+                    - ((cos(2*theta)-4*cos(theta)+3)/(4*theta^4))*(phix*ax*phix) ...
+                    + ((4*sin(theta)+sin(2*theta)-4*theta*cos(theta)-2*theta)/(4*theta^5))*(phix*ax*phix^2) ...
+                    + (((theta)^2-2*theta*sin(theta)-2*cos(theta)+2)/(2*theta^4))*(phix^2*ax) ...
+                    - ((6*theta-8*sin(theta)+sin(2*theta))/(4*theta^5))*(phix^2*ax*phix) ...
+                    + ((2*(theta)^2-4*theta*sin(theta)-cos(2*theta)+1)/(4*theta^6))*(phix^2*ax*phix^2);
+
+                Psi2 = ax*Lie.Gamma(-phi,3) ...
+                    - ((theta*sin(theta)+2*cos(theta)-2)/(theta^4))*(phix*ax) ...
+                    - ((6*theta-8*sin(theta)+sin(2*theta))/(8*theta^5))*(phix*ax*phix) ...
+                    - ((2*(theta)^2+8*theta*sin(theta)+16*cos(theta)+cos(2*theta)-17)/(8*theta^6))*(phix*ax*phix^2) ...
+                    + (((theta)^3+6*theta-12*sin(theta)+6*theta*cos(theta))/(6*theta^5))*(phix^2*ax) ...
+                    - ((6*(theta)^2+16*cos(theta)-cos(2*theta)-15)/(8*theta^6))*(phix^2*ax*phix) ...
+                    + ((4*(theta)^3+6*theta-24*sin(theta)-3*sin(2*theta)+24*theta*cos(theta))/(24*theta^7))*(phix^2*ax*phix^2);
             else
-                int_G0aG1t = (1/2)*ax*dt^2;
-                int2_G0aG1t = (1/6)*ax*dt^3;
-            end
+                Psi1 = (1/2)*ax;
+                Psi2 = (1/6)*ax;
+            end       
+            
             Phi(1:3,1:3) = G0';
             Phi(4:6,1:3) = -R*Lie.skew(G1*a)*dt;
             Phi(7:9,1:3) = -R*Lie.skew(G2*a)*dt^2;
             Phi(7:9,4:6) = eye(3)*dt;
             Phi(1:3,16:18) = -G1'*dt;
-            Phi(4:6,16:18) = R*int_G0aG1t;
-            Phi(7:9,16:18) = R*int2_G0aG1t;
+            Phi(4:6,16:18) = R*Psi1*dt^2;
+            Phi(7:9,16:18) = R*Psi2*dt^3;
             Phi(4:6,19:21) = -R*G1*dt;
             Phi(7:9,19:21) = -R*G2*dt^2;
             
@@ -295,8 +299,7 @@ classdef QuaternionEKF < matlab.System & matlab.system.mixin.Propagates %#codege
         function [x] = Compose(obj, x_bar, delta_x)
             % Update state prediction with error correction vector
             [q_bar, v_bar, p_bar, dL_bar, dR_bar, bg_bar, ba_bar] = obj.Separate_States(x_bar);
-            R_bar = Quaternion(q_bar).getRotation().getValue();
-            q = Rotation3d(R_bar*Lie.Exp(delta_x(1:3))).getQuaternion().getValue();
+            q = Angles.Quaternion_Multiply(q_bar, Angles.Quaternion_Exp(delta_x(1:3)));
             v = v_bar + delta_x(4:6);
             p = p_bar + delta_x(7:9);
             dL = dL_bar + delta_x(10:12);

@@ -110,7 +110,7 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             %       enabled - flag indicating when the filter is enabled
             %
             %   Author: Ross Hartley
-            %   Date:   3/6/2019
+            %   Date:   04/18/2019
             %
             
             % Change contact to discrete
@@ -147,7 +147,7 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
             w = w - bg;
             a = a - ba;
             gx = Lie.skew(obj.g);
-            wx = Lie.skew(w);
+%             wx = Lie.skew(w);
             ax = Lie.skew(a);
             
             % Base Pose Dynamics
@@ -170,40 +170,41 @@ classdef RightInvariantEKF < matlab.System & matlab.system.mixin.Propagates %#co
                  
             % Analytical State transition matrix
             Phi = eye(21);
-            theta = norm(w);
-            if (theta > 1e-6)
-                int_G0aG1t = ax*Lie.Gamma(-w*dt,2)*dt^2 ...
-                    + ((sin(theta*dt)-theta*dt*cos(theta*dt))/(theta^3))*(wx*ax) ...
-                    - ((cos(2*theta*dt)-4*cos(theta*dt)+3)/(4*theta^4))*(wx*ax*wx) ...
-                    + ((4*sin(theta*dt)+sin(2*theta*dt)-4*theta*dt*cos(theta*dt)-2*theta*dt)/(4*theta^5))*(wx*ax*wx^2) ...
-                    + (((theta*dt)^2-2*theta*dt*sin(theta*dt)-2*cos(theta*dt)+2)/(2*theta^4))*(wx^2*ax) ...
-                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(4*theta^5))*(wx^2*ax*wx) ...
-                    + ((2*(theta*dt)^2-4*theta*dt*sin(theta*dt)-cos(2*theta*dt)+1)/(4*theta^6))*(wx^2*ax*wx^2);
-                int2_G0aG1t = ax*Lie.Gamma(-w*dt,3)*dt^3 ...
-                    - ((theta*dt*sin(theta*dt)+2*cos(theta*dt)-2)/(theta^4))*(wx*ax) ...
-                    - ((6*theta*dt-8*sin(theta*dt)+sin(2*theta*dt))/(8*theta^5))*(wx*ax*wx) ...
-                    - ((2*(theta*dt)^2+8*theta*dt*sin(theta*dt)+16*cos(theta*dt)+cos(2*theta*dt)-17)/(8*theta^6))*(wx*ax*wx^2) ...
-                    + (((theta*dt)^3+6*theta*dt-12*sin(theta*dt)+6*theta*dt*cos(theta*dt))/(6*theta^5))*(wx^2*ax) ...
-                    - ((6*(theta*dt)^2+16*cos(theta*dt)-cos(2*theta*dt)-15)/(8*theta^6))*(wx^2*ax*wx) ...
-                    + ((4*(theta*dt)^3+6*theta*dt-24*sin(theta*dt)-3*sin(2*theta*dt)+24*theta*dt*cos(theta*dt))/(24*theta^7))*(wx^2*ax*wx^2);
+            phi = w*dt;
+            phix = Lie.skew(phi);
+            theta = norm(phi);            
+            if (norm(w) > 1e-6)
+                Psi1 = ax*Lie.Gamma(-phi,2) ...
+                    + ((sin(theta)-theta*cos(theta))/(theta^3))*(phix*ax) ...
+                    - ((cos(2*theta)-4*cos(theta)+3)/(4*theta^4))*(phix*ax*phix) ...
+                    + ((4*sin(theta)+sin(2*theta)-4*theta*cos(theta)-2*theta)/(4*theta^5))*(phix*ax*phix^2) ...
+                    + (((theta)^2-2*theta*sin(theta)-2*cos(theta)+2)/(2*theta^4))*(phix^2*ax) ...
+                    - ((6*theta-8*sin(theta)+sin(2*theta))/(4*theta^5))*(phix^2*ax*phix) ...
+                    + ((2*(theta)^2-4*theta*sin(theta)-cos(2*theta)+1)/(4*theta^6))*(phix^2*ax*phix^2);
+
+                Psi2 = ax*Lie.Gamma(-phi,3) ...
+                    - ((theta*sin(theta)+2*cos(theta)-2)/(theta^4))*(phix*ax) ...
+                    - ((6*theta-8*sin(theta)+sin(2*theta))/(8*theta^5))*(phix*ax*phix) ...
+                    - ((2*(theta)^2+8*theta*sin(theta)+16*cos(theta)+cos(2*theta)-17)/(8*theta^6))*(phix*ax*phix^2) ...
+                    + (((theta)^3+6*theta-12*sin(theta)+6*theta*cos(theta))/(6*theta^5))*(phix^2*ax) ...
+                    - ((6*(theta)^2+16*cos(theta)-cos(2*theta)-15)/(8*theta^6))*(phix^2*ax*phix) ...
+                    + ((4*(theta)^3+6*theta-24*sin(theta)-3*sin(2*theta)+24*theta*cos(theta))/(24*theta^7))*(phix^2*ax*phix^2);
             else
-                int_G0aG1t = (1/2)*ax*dt^2;
-                int2_G0aG1t = (1/6)*ax*dt^3;
-            end
-            
+                Psi1 = (1/2)*ax;
+                Psi2 = (1/6)*ax;
+            end                 
             Phi(4:6,1:3) = gx*dt;
             Phi(7:9,1:3) = 0.5*gx*dt^2;
             Phi(7:9,4:6) = eye(3)*dt;
             Phi(1:3,16:18) = -R*G1*dt;
-            Phi(4:6,16:18) = -Lie.skew(v_pred)*R*G1*dt + int_G0aG1t;
-            Phi(7:9,16:18) = -Lie.skew(p_pred)*R*G1*dt + int2_G0aG1t;
+            Phi(4:6,16:18) = -Lie.skew(v_pred)*R*G1*dt + R*Psi1*dt^2;
+            Phi(7:9,16:18) = -Lie.skew(p_pred)*R*G1*dt + R*Psi2*dt^3;
             Phi(10:12,16:18) = -Lie.skew(dL_pred)*R*G1*dt;
             Phi(13:15,16:18) = -Lie.skew(dR_pred)*R*G1*dt;
             Phi(4:6,19:21) = -R*Lie.Gamma(w*dt,1)*dt;
             Phi(7:9,19:21) = -R*Lie.Gamma(w*dt,2)*dt^2;
             
-                
-            % Discrete State Transition Matrix
+            % Discrete Noise Matrix
             hR_R = R_VectorNav_to_RightToeBottom(encoders);
             hR_L = R_VectorNav_to_LeftToeBottom(encoders);
             G = blkdiag(Lie.Adjoint(obj.X_prev),eye(6));

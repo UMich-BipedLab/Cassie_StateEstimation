@@ -1,15 +1,16 @@
 %% Plot covariance ellipses
-clear; clc; close all;
+% clear; clc; close all;
+addpath(genpath('../../'))
 
-load('EKF_run_v1')
+% load('EKF_run_v1')
 
 X_true = [quat2dcm(true_state.Data(end,1:4))', true_state.Data(end,5:7)'; 0,0,0,1];
 Sigma_riekf = P_riekf.Data([1,2,3,7,8,9],[1,2,3,7,8,9],end);
 Sigma_qekf = P_qekf.Data([1,2,3,7,8,9],[1,2,3,7,8,9],end);
 
-% Sigma_riekf(1:3,1:3) = 0.1*eye(3);
-% Sigma_riekf(1:3,4:6) = zeros(3);
-% Sigma_riekf(4:6,1:3) = zeros(3);
+Sigma_riekf(1:3,1:3) = 0.1*eye(3);
+Sigma_riekf(1:3,4:6) = zeros(3);
+Sigma_riekf(4:6,1:3) = zeros(3);
 
 % Uniformly sample (n-1)-sphere
 n = 6;
