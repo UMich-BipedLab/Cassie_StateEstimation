@@ -24,12 +24,9 @@ The following parameters will affect the actual noisy measurements coming into t
 * `accel_true_bias_noise_std` - Standard deviation of noise added to the accelerometer bias 
 
 The following parameters will affect how the filter is run:
-* `static_bias_initialization` - Flag that enables static bias initialization, where the initial bias estimate is obtained from the first few seconds of data assuming the base pose remains fixed. This should be turned off for simulations, and on when running on Cassie (be sure to keep the IMU motionless for the first few seconds after the robot is turned on).
 * `ekf_update_enabled` - Flag that enables the update phase of the Kalman filter.
 
 The following parameters affect the initial condition and covariances used for the process and measurement models:
-* `gyro_bias_init` - Initial gyroscope bias estimate
-* `accel_bias_init` - Initial accelerometer bias estimate
 * `gyro_noise_std` - Standard deviation of the gyroscope measurement noise
 * `gyro_bias_noise_std` - Standard deviation of the gyroscope bias noise
 * `accel_noise_std` - Standard deviation of the accelerometer measurement noise
