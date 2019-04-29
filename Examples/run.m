@@ -6,7 +6,11 @@ AGILITY_CODE_PATH = '../../agility-cassie-doc';
 addpath(genpath(AGILITY_CODE_PATH));
 
 % Add paths for this code and load example measurements
-addpath(genpath('../'));
+addpath('../');
+addpath(genpath('../gen/linux')); % add path to linux compiled kinematics
+addpath(genpath('../Estimators')); 
+addpath(genpath('../Libraries')); 
+addpath(genpath('../Examples')); 
 load(fullfile('data','measurements_v2.mat'));
 load('data/true_state_v2.mat')
 
