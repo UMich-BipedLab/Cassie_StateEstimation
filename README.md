@@ -4,6 +4,10 @@ This repository contains a Matlab/Simulink implementation of the contact-aided i
 This filter is developed and explained in:
 ["Contact-aided Invariant Extended Kalman Filtering for Legged Robot State Estimation"](https://arxiv.org/pdf/1805.10410.pdf). Please cite this paper if the filter is being used (the BibTeX entry is located at the bottom of the README).
 
+# Requirements
+* MATLAB (tested on 2017b, but later versions may be okay)
+* Agility Robotics Software to run the Cassie example: https://github.com/agilityrobotics/agility-cassie-doc
+
 ## Running the example
 1. Open Matlab to the "Examples" folder.
 
