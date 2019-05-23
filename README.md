@@ -6,7 +6,7 @@ This filter is developed and explained in:
 
 # Requirements
 * MATLAB (tested on 2017b, but later versions may be okay)
-* Agility Robotics Software to run the Cassie example: https://github.com/agilityrobotics/agility-cassie-doc
+* Agility Robotics Software - after downloading from https://github.com/agilityrobotics/agility-cassie-doc, extract the .zip in "/agility-cassie-doc/Software/"
 
 ## Running the example
 1. Open Matlab to the "Examples" folder.
